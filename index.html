@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sam Digital — Nashville Digital Services</title>
+<meta name="description" content="Sam Digital is a Nashville-based digital services agency specializing in software development, research, technical writing, and automation.">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #0f1117;
+    color: #c9cdd4;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: #6ea8fe; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 10;
+    background: rgba(15,17,23,.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid #1e2028;
+    padding: 1rem 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  nav .logo { font-weight: 700; font-size: 1.1rem; color: #e4e7ec; letter-spacing: -.02em; }
+  nav ul { list-style: none; display: flex; gap: 1.5rem; }
+  nav ul li a { color: #8b8fa3; font-size: .875rem; transition: color .2s; }
+  nav ul li a:hover { color: #e4e7ec; text-decoration: none; }
+
+  /* Sections */
+  section { max-width: 800px; margin: 0 auto; padding: 5rem 1.5rem; }
+  .hero { padding-top: 8rem; text-align: center; }
+  .hero h1 { font-size: 2.75rem; color: #f0f2f5; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+  .hero p { margin-top: 1.25rem; font-size: 1.15rem; color: #8b8fa3; max-width: 520px; margin-left: auto; margin-right: auto; }
+  .badge {
+    display: inline-block; margin-top: 2rem;
+    padding: .5rem 1.25rem; border-radius: 999px;
+    background: #1a1d27; border: 1px solid #2a2d3a;
+    font-size: .8rem; color: #8b8fa3; letter-spacing: .04em; text-transform: uppercase;
+  }
+
+  h2 {
+    font-size: 1.75rem; color: #e4e7ec; font-weight: 700;
+    margin-bottom: 2.5rem; letter-spacing: -.02em;
+  }
+  .section-label {
+    font-size: .75rem; text-transform: uppercase; letter-spacing: .1em;
+    color: #6ea8fe; margin-bottom: .75rem; font-weight: 600;
+  }
+
+  /* Services grid */
+  .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .service-card {
+    background: #161820; border: 1px solid #1e2028; border-radius: 12px;
+    padding: 1.75rem;
+    transition: border-color .2s;
+  }
+  .service-card:hover { border-color: #2a2d3a; }
+  .service-card h3 { color: #e4e7ec; font-size: 1.05rem; margin-bottom: .5rem; font-weight: 600; }
+  .service-card p { font-size: .9rem; color: #6b7084; line-height: 1.6; }
+
+  /* About */
+  .about-points { display: flex; gap: 2rem; margin-top: .5rem; }
+  .about-point { flex: 1; }
+  .about-point h3 { color: #e4e7ec; font-size: .95rem; margin-bottom: .35rem; font-weight: 600; }
+  .about-point p { font-size: .875rem; color: #6b7084; }
+
+  /* Contact */
+  .contact-box {
+    background: #161820; border: 1px solid #1e2028; border-radius: 12px;
+    padding: 2rem; text-align: center;
+  }
+  .contact-box p { color: #8b8fa3; margin-bottom: 1rem; }
+  .contact-box a.email {
+    font-size: 1.15rem; font-weight: 600; color: #6ea8fe;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 2.5rem 1.5rem;
+    border-top: 1px solid #1e2028;
+    font-size: .8rem; color: #4a4e5a;
+  }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid #1e2028; margin: 0 auto; max-width: 800px; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2rem; }
+    .services-grid { grid-template-columns: 1fr; }
+    .about-points { flex-direction: column; gap: 1.25rem; }
+    nav ul { gap: .75rem; }
+    section { padding: 3.5rem 1.25rem; }
+    .hero { padding-top: 6rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Sam Digital</div>
+  <ul>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<section class="hero">
+  <h1>Nashville Digital Services</h1>
+  <p>Software development, research, and automation — delivered with clarity and precision by a focused team.</p>
+  <span class="badge">Nashville, TN</span>
+</section>
+
+<hr class="divider">
+
+<section id="services">
+  <div class="section-label">What We Do</div>
+  <h2>Services</h2>
+  <div class="services-grid">
+    <div class="service-card">
+      <h3>Software Development</h3>
+      <p>Custom applications, APIs, and integrations built to spec. Clean code, clear communication, reliable delivery.</p>
+    </div>
+    <div class="service-card">
+      <h3>Research &amp; Analysis</h3>
+      <p>Deep-dive research, data analysis, and structured reporting to support your decisions with solid evidence.</p>
+    </div>
+    <div class="service-card">
+      <h3>Technical Writing</h3>
+      <p>Documentation, guides, and content that makes complex topics accessible and actionable.</p>
+    </div>
+    <div class="service-card">
+      <h3>Automation</h3>
+      <p>Workflow automation, scripting, and system integration to eliminate repetitive work and reduce errors.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="about">
+  <div class="section-label">Who We Are</div>
+  <h2>About</h2>
+  <p style="margin-bottom: 2rem;">Sam Digital is a small, focused digital services agency based in Nashville, Tennessee. We keep our team lean so we can move fast, communicate directly, and price fairly. No layers, no overhead — just good work delivered on time.</p>
+  <div class="about-points">
+    <div class="about-point">
+      <h3>Small Team</h3>
+      <p>Direct access to the people doing the work. No account managers in between.</p>
+    </div>
+    <div class="about-point">
+      <h3>Fast Delivery</h3>
+      <p>Tight feedback loops and quick turnarounds without cutting corners.</p>
+    </div>
+    <div class="about-point">
+      <h3>Fair Pricing</h3>
+      <p>Transparent rates, honest estimates, and no surprise invoices.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<section id="contact">
+  <div class="section-label">Get In Touch</div>
+  <h2>Contact</h2>
+  <div class="contact-box">
+    <p>Have a project in mind? We'd love to hear about it.</p>
+    <a class="email" href="mailto:sam-in-nashville@pm.me">sam-in-nashville@pm.me</a>
+  </div>
+</section>
+
+<footer>
+  &copy; 2026 Sam Digital. All rights reserved.
+</footer>
+
+</body>
+</html>
