@@ -408,7 +408,8 @@
         const dx = p.homeX - p.x;
         const dy = p.homeY - p.y;
         const d2 = dx*dx + dy*dy;
-        if(d2 < 1 && p.settleDelay > 4.5){
+        if(d2 < 4 && p.settleDelay > 3.0){
+          // close enough — snap home and restore normal behavior
           p.x = p.homeX; p.y = p.homeY;
           p.vx = p.origVx; p.vy = p.origVy;
           delete p.homeX; delete p.homeY;
@@ -417,8 +418,10 @@
         } else {
           p.vx += dx * springStr * s;
           p.vy += dy * springStr * s;
-          p.vx *= Math.max(0, 1 - dampStr * s);
-          p.vy *= Math.max(0, 1 - dampStr * s);
+          // extra damping when close to prevent oscillation
+          const closeDamp = d2 < 25 ? 2.0 : 0;
+          p.vx *= Math.max(0, 1 - (dampStr + closeDamp) * s);
+          p.vy *= Math.max(0, 1 - (dampStr + closeDamp) * s);
         }
       }
     }
