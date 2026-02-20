@@ -485,12 +485,10 @@
 (function verticalToHorizontal(){
   const scroller = document.getElementById('scroller');
   if(!scroller) return;
-  scroller.addEventListener('wheel', function(e){
-    if(window.matchMedia('(max-width:720px)').matches) return; // mobile uses native vertical
-    if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){
-      e.preventDefault();
-      scroller.scrollLeft += e.deltaY;
-    }
+  document.addEventListener('wheel', function(e){
+    if(window.matchMedia('(max-width:720px)').matches) return;
+    e.preventDefault();
+    scroller.scrollBy({left: e.deltaY || e.deltaX, behavior: 'auto'});
   }, {passive: false});
 })();
 
