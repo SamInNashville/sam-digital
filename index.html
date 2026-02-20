@@ -355,10 +355,10 @@
         // subtle position displacement + gentle velocity kick
         const pushX = (dx / d) * force;
         const pushY = (dy / d) * force;
-        p.x += pushX * 4;
-        p.y += pushY * 4;
-        p.vx += pushX * 2.5;
-        p.vy += pushY * 2.5;
+        p.x += pushX * 2;
+        p.y += pushY * 2;
+        p.vx += pushX * 1.25;
+        p.vy += pushY * 1.25;
         p.settleDelay = 0; // reset settle delay — comet is still nearby
       }
     }
