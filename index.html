@@ -89,173 +89,195 @@
   </div>
 </nav>
 
-<!-- Parallax background built in SVG layers (self-contained, no external images) -->
+<!-- Parallax background replaced with performant canvas particle system -->
 <div class="parallax-layer" aria-hidden="true">
-  <svg id="scene" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
-    <defs>
-      <!-- Sky: warm sunset gradient -->
-      <linearGradient id="sky-warm" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#1b1233" />
-        <stop offset="45%" stop-color="#6b4aa0" />
-        <stop offset="70%" stop-color="#d99a6c" />
-        <stop offset="100%" stop-color="#ffd28a" />
-      </linearGradient>
-
-      <!-- Subtle horizon wash -->
-      <radialGradient id="sun-halo" cx="50%" cy="70%" r="35%">
-        <stop offset="0%" stop-color="#ffd28a" stop-opacity="0.95" />
-        <stop offset="40%" stop-color="#ffb36b" stop-opacity="0.45" />
-        <stop offset="100%" stop-color="#ff8a4d" stop-opacity="0.0" />
-      </radialGradient>
-
-      <!-- Mountains palettes (back to front) -->
-      <linearGradient id="m-far" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#1b2740" />
-        <stop offset="100%" stop-color="#142033" />
-      </linearGradient>
-      <linearGradient id="m-mid" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#3a264c" />
-        <stop offset="100%" stop-color="#2b3450" />
-      </linearGradient>
-      <linearGradient id="m-near" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#7a3d2f" />
-        <stop offset="100%" stop-color="#3c2a35" />
-      </linearGradient>
-
-      <!-- Trees foliage gradient -->
-      <linearGradient id="foliage" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#2f7b49" />
-        <stop offset="100%" stop-color="#153e2a" />
-      </linearGradient>
-
-      <!-- Grass gradient -->
-      <linearGradient id="grass" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#23482c" />
-        <stop offset="100%" stop-color="#15321e" />
-      </linearGradient>
-
-      <!-- Flowers palette (small solid colors) -->
-      <g id="flower-palette">
-        <circle r="3" fill="#ffcf6b" />
-      </g>
-
-      <!-- Soft blur for clouds and halo -->
-      <filter id="soft-blur" x="-40%" y="-40%" width="180%" height="180%">
-        <feGaussianBlur stdDeviation="12" />
-      </filter>
-
-      <!-- Subtle grain for depth (very light) -->
-      <filter id="grain" x="0" y="0" width="100%" height="100%">
-        <feTurbulence baseFrequency="0.8" numOctaves="2" stitchTiles="stitch" result="t" />
-        <feColorMatrix type="saturate" values="0" />
-        <feBlend in="SourceGraphic" />
-      </filter>
-    </defs>
-
-    <!-- Sky base -->
-    <rect x="0" y="0" width="1600" height="900" fill="url(#sky-warm)" />
-
-    <!-- Sun + halo near horizon -->
-    <g id="sun-group" transform="translate(900,580)">
-      <circle cx="0" cy="0" r="80" fill="url(#sun-halo)" opacity="0.95" />
-      <circle cx="0" cy="0" r="36" fill="#fff0d6" opacity="0.95" />
-    </g>
-
-    <!-- Wispy clouds (soft blurred ellipses) -->
-    <g id="clouds" filter="url(#soft-blur)" opacity="0.7">
-      <ellipse cx="300" cy="160" rx="180" ry="32" fill="#f6e5d9" opacity="0.08" />
-      <ellipse cx="520" cy="120" rx="120" ry="22" fill="#f6e5d9" opacity="0.06" />
-      <ellipse cx="1100" cy="140" rx="160" ry="28" fill="#f6d9c3" opacity="0.07" />
-    </g>
-
-    <!-- Distant stars (upper sky) -->
-    <g id="stars" opacity="0.9">
-      <!-- a field of tiny dots with varying opacity -->
-      <g fill="#fff7e6">
-        <circle cx="120" cy="60" r="0.9" opacity="0.06" />
-        <circle cx="220" cy="40" r="0.8" opacity="0.05" />
-        <circle cx="380" cy="30" r="1.1" opacity="0.07" />
-        <circle cx="480" cy="70" r="0.7" opacity="0.04" />
-        <circle cx="1400" cy="50" r="1.2" opacity="0.08" />
-        <circle cx="1320" cy="90" r="0.8" opacity="0.05" />
-      </g>
-    </g>
-
-    <!-- Far mountains (move slowest) -->
-    <g id="mountains-far" style="opacity:1">
-      <path d="M0,520 C120,460 240,490 380,460 C520,430 700,480 860,450 C1020,420 1200,480 1440,440 C1560,420 1600,430 1600,900 L0,900 Z"
-            fill="url(#m-far)" />
-      <!-- subtle highlight along ridgeline -->
-      <path d="M0,520 C120,460 240,490 380,460 C520,430 700,480 860,450 C1020,420 1200,480 1440,440 C1560,420 1600,430"
-            fill="none" stroke="rgba(255,200,140,0.06)" stroke-width="18" stroke-linecap="round" />
-    </g>
-
-    <!-- Mid mountains -->
-    <g id="mountains-mid" style="opacity:0.98">
-      <path d="M0,620 C100,560 260,600 420,560 C580,520 760,600 940,560 C1120,520 1280,600 1600,560 L1600,900 L0,900 Z"
-            fill="url(#m-mid)" />
-      <path d="M40,600 C200,540 360,580 520,550 C680,520 820,580 980,550 C1140,520 1280,580 1560,540"
-            fill="none" stroke="rgba(255,180,120,0.05)" stroke-width="14" stroke-linecap="round" />
-    </g>
-
-    <!-- Nearer mountains / rolling hills -->
-    <g id="mountains-near" style="opacity:1">
-      <path d="M0,700 C140,640 300,700 460,660 C620,620 760,700 920,660 C1080,620 1240,700 1600,660 L1600,900 L0,900 Z"
-            fill="url(#m-near)" />
-      <path d="M0,700 C140,640 300,700 460,660 C620,620 760,700 920,660 C1080,620 1240,700 1600,660"
-            fill="none" stroke="rgba(255,170,110,0.06)" stroke-width="12" stroke-linecap="round" />
-    </g>
-
-    <!-- Trees row (mid-layer) - keep id trees-mid and trees-repeat for JS to populate -->
-    <g id="trees-mid" transform="translate(0,240)" style="opacity:1">
-      <g id="trees-repeat"></g>
-    </g>
-
-    <!-- Foreground grassy hills with flowers and small critters -->
-    <g id="foreground" style="opacity:1">
-      <!-- rolling grass shapes -->
-      <path d="M0,760 C120,700 260,740 400,710 C540,680 700,740 860,710 C1020,680 1180,740 1280,710 C1400,680 1520,740 1600,700 L1600,900 L0,900 Z"
-            fill="url(#grass)" />
-
-      <!-- wildflowers: small colored circles scattered -->
-      <g id="flowers" opacity="0.95">
-        <circle cx="140" cy="740" r="3" fill="#ffcf6b" />
-        <circle cx="200" cy="730" r="2.5" fill="#ff6b9a" />
-        <circle cx="320" cy="745" r="2.8" fill="#b48eff" />
-        <circle cx="480" cy="725" r="2.6" fill="#ffd36b" />
-        <circle cx="680" cy="738" r="3" fill="#ffcf6b" />
-        <circle cx="920" cy="730" r="2.6" fill="#b48eff" />
-        <circle cx="1140" cy="742" r="2.4" fill="#ff6b9a" />
-        <circle cx="1400" cy="735" r="2.8" fill="#ffd36b" />
-      </g>
-
-      <!-- critters group: keep id critters for JS or CSS hooks -->
-      <g id="critters" transform="translate(40, -30)" fill="#fff8e6" opacity="0.95">
-        <!-- rabbit silhouette (simple, elegant) -->
-        <g id="rabbit" transform="translate(160,760) scale(1)">
-          <path d="M0,0 c8,-4 20,-6 28,2 c8,8 4,18 -6,20 c-10,2 -24,-2 -34,-12 c-6,-6 -7,-10 12,-10 z" fill="#fff7e6" />
-          <ellipse cx="18" cy="-6" rx="3" ry="6" fill="#fff7e6" />
-        </g>
-        <!-- deer silhouette (small, calm) -->
-        <g id="deer" transform="translate(360,748) scale(0.9)">
-          <path d="M0,0 c10,-6 34,-10 56,2 c12,8 16,22 6,28 c-10,6 -36,6 -56,-2 c-12,-6 -18,-18 -6,-28 z" fill="#fff7e6" />
-          <path d="M44,-4 l10,-8" stroke="#fff7e6" stroke-width="1.6" stroke-linecap="round" />
-        </g>
-        <!-- bird in flight in sky (keeps subtlety) -->
-        <g id="bird" transform="translate(1180,200) scale(1)" fill="#fff7e6" opacity="0.95">
-          <path d="M0,4 C6,-2 18,-2 28,4 C18,2 10,6 0,4 z" />
-        </g>
-      </g>
-
-    </g>
-
-    <!-- gentle vignette inside SVG to blend with page vignette -->
-    <rect x="0" y="0" width="1600" height="900" fill="black" opacity="0.02" />
-  </svg>
+  <canvas id="bg-canvas" width="1600" height="900" style="width:100%;height:100%;display:block"></canvas>
+  <!-- Gradient mesh overlay using absolutely positioned divs for subtle color blobs -->
+  <div id="gradients" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0.9">
+    <div class="blob" style="position:absolute;width:800px;height:800px;border-radius:50%;left:-10%;top:10%;background:radial-gradient(circle at 30% 30%, rgba(63,132,255,0.18), rgba(45,58,120,0.06) 40%, transparent 60%);filter:blur(140px);transform:translate3d(0,0,0);"></div>
+    <div class="blob" style="position:absolute;width:900px;height:900px;border-radius:50%;left:40%;top:-20%;background:radial-gradient(circle at 60% 40%, rgba(142,86,255,0.14), rgba(45,24,90,0.04) 40%, transparent 60%);filter:blur(160px);transform:translate3d(0,0,0);"></div>
+    <div class="blob" style="position:absolute;width:700px;height:700px;border-radius:50%;left:75%;top:30%;background:radial-gradient(circle at 40% 60%, rgba(255,190,80,0.08), rgba(60,34,12,0.02) 40%, transparent 60%);filter:blur(120px);transform:translate3d(0,0,0);"></div>
+  </div>
 </div>
 
 <!-- Vignette -->
 <div class="vignette"></div>
+
+<script>
+// Canvas particle background (replaces SVG scene and old parallax)
+(function canvasParticles(){
+  const canvas = document.getElementById('bg-canvas');
+  const gradContainer = document.getElementById('gradients');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Resize handling
+  function resize(){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Particle system parameters
+  const palette = [ '#66d1ff', '#4bd3c7', '#a48dff', '#8fb0ff', '#ffc765' ]; // blues, teal, purple, warm accent
+  const bgColor = '#0a0a1a';
+  const numParticles = Math.max(80, Math.round((window.innerWidth * window.innerHeight) / 4500)); // scale with area
+  const particles = [];
+  const depths = [0.35, 0.6, 0.9, 1.2]; // different layers speeds
+
+  // create particles
+  function initParticles(){
+    particles.length = 0;
+    for(let i=0;i<numParticles;i++){
+      const depth = depths[Math.floor(Math.random()*depths.length)];
+      const size = Math.random()*3 + 1; // 1-4 px
+      const x = Math.random()*window.innerWidth;
+      const y = Math.random()*window.innerHeight;
+      const vx = (Math.random()*0.4 - 0.2) * (1/depth); // slower for deeper
+      const vy = (Math.random()*0.2 - 0.1) * (1/depth);
+      const color = palette[Math.floor(Math.random()*palette.length)];
+      const opacity = 0.2 + Math.random()*0.8; // vary opacity
+      const star = Math.random() < 0.06; // some brighter stars
+      particles.push({x,y,vx,vy,size,depth,color,opacity,star});
+    }
+  }
+  initParticles();
+
+  // Interaction state
+  let pointer = {x:-9999,y:-9999,down:false};
+  function updatePointer(e){
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = (e.touches ? e.touches[0].clientX : e.clientX) || pointer.x;
+    pointer.y = (e.touches ? e.touches[0].clientY : e.clientY) || pointer.y;
+  }
+  window.addEventListener('pointermove', updatePointer, {passive:true});
+  window.addEventListener('touchmove', updatePointer, {passive:true});
+  window.addEventListener('pointerleave', ()=>{ pointer.x=-9999; pointer.y=-9999; }, {passive:true});
+
+  // Parallax offsets based on horizontal scroll
+  let parallaxOffset = 0; // 0..1 based on scroller
+  const scroller = document.getElementById('scroller');
+  function updateParallax(){
+    if(!scroller) return;
+    const maxScroll = Math.max(1, scroller.scrollWidth - scroller.clientWidth);
+    parallaxOffset = scroller.scrollLeft / maxScroll;
+  }
+  if(scroller){ scroller.addEventListener('scroll', ()=>{ requestAnimationFrame(updateParallax); }); updateParallax(); }
+
+  // Animation loop
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min(40, now - last);
+    last = now;
+    // clear
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // draw connecting lines subtly
+    ctx.lineWidth = 0.6;
+    for(let i=0;i<particles.length;i++){
+      const p = particles[i];
+      // update position with depth-based parallax shift
+      const parallaxX = (parallaxOffset - 0.5) * (30 * (1/p.depth));
+      p.x += p.vx * (dt/16);
+      p.y += p.vy * (dt/16);
+      // gentle noise movement
+      p.x += Math.sin((now/4000 + i) * 0.7) * 0.02;
+      p.y += Math.cos((now/3000 + i) * 0.5) * 0.01;
+      // wrap around edges
+      if(p.x < -20) p.x = window.innerWidth + 20;
+      if(p.x > window.innerWidth + 20) p.x = -20;
+      if(p.y < -20) p.y = window.innerHeight + 20;
+      if(p.y > window.innerHeight + 20) p.y = -20;
+    }
+
+    // Interaction: repel/attract
+    const influenceRadius = 120;
+    for(let i=0;i<particles.length;i++){
+      const p = particles[i];
+      const dx = pointer.x - p.x;
+      const dy = pointer.y - p.y;
+      const dist2 = dx*dx + dy*dy;
+      if(dist2 < influenceRadius*influenceRadius){
+        const dist = Math.sqrt(dist2) || 1;
+        const force = (1 - dist / influenceRadius) * 0.6; // subtle
+        // mix attract and repel based on depth
+        const sign = p.depth > 0.9 ? -1 : 1; // closer layers repel, deeper attract
+        p.x += -dx/dist * force * sign;
+        p.y += -dy/dist * force * sign * 0.6;
+      }
+    }
+
+    // draw connections
+    for(let i=0;i<particles.length;i++){
+      const a = particles[i];
+      for(let j=i+1;j<particles.length;j++){
+        const b = particles[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const d2 = dx*dx + dy*dy;
+        if(d2 < 16000){ // within ~126px
+          const alpha = Math.max(0, 0.12 - d2 / 16000 * 0.12) * (1/( (a.depth+b.depth)/2 ));
+          ctx.strokeStyle = 'rgba(140,170,255,'+ (alpha*0.9) +')';
+          ctx.beginPath();
+          ctx.moveTo(a.x + (parallaxOffset-0.5) * (10*(1/a.depth)), a.y);
+          ctx.lineTo(b.x + (parallaxOffset-0.5) * (10*(1/b.depth)), b.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // draw particles on top of lines
+    for(let i=0;i<particles.length;i++){
+      const p = particles[i];
+      const px = p.x + parallaxXFor(p.depth);
+      // glow
+      if(p.star){
+        ctx.beginPath();
+        const grd = ctx.createRadialGradient(px, p.y, 0, px, p.y, p.size*6);
+        grd.addColorStop(0, rgba(p.color, p.opacity * 1.0));
+        grd.addColorStop(0.6, rgba(p.color, p.opacity * 0.18));
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(px - p.size*6, p.y - p.size*6, p.size*12, p.size*12);
+      }
+      // core
+      ctx.beginPath();
+      ctx.fillStyle = rgba(p.color, p.opacity);
+      ctx.arc(px, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function parallaxXFor(depth){
+    return (parallaxOffset - 0.5) * (40 * (1/depth));
+  }
+
+  function rgba(hex, a){
+    const c = hex.replace('#','');
+    const r = parseInt(c.substring(0,2),16);
+    const g = parseInt(c.substring(2,4),16);
+    const b = parseInt(c.substring(4,6),16);
+    return 'rgba('+r+','+g+','+b+','+a+')';
+  }
+
+  // kick off
+  requestAnimationFrame(tick);
+
+  // Re-init on orientation change / resize
+  window.addEventListener('orientationchange', ()=>{ setTimeout(()=>{ initParticles(); resize(); },300); });
+
+})();
+</script>
 
 <!-- Horizontal scroller with panels -->
 <div id="scroller" class="scroller" tabindex="0">
