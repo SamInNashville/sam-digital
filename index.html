@@ -379,20 +379,66 @@
       ctx.arc(t.x, t.y, size, 0, Math.PI*2);
       ctx.fill();
     }
-    // draw head with glow
+    // draw head with glow + lens flare
     if(comet.life <= comet.maxLife){
-      const grd = ctx.createRadialGradient(comet.x, comet.y, 0, comet.x, comet.y, 18);
+      const cx = comet.x;
+      const cy = comet.y;
+      // outer glow
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 18);
       grd.addColorStop(0, 'rgba(255,240,220,0.9)');
       grd.addColorStop(0.3, 'rgba(255,200,140,0.4)');
       grd.addColorStop(1, 'rgba(255,200,140,0)');
       ctx.beginPath();
       ctx.fillStyle = grd;
-      ctx.arc(comet.x, comet.y, 18, 0, Math.PI*2);
+      ctx.arc(cx, cy, 18, 0, Math.PI*2);
       ctx.fill();
+
+      // lens flare — horizontal streak
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const flareGrd = ctx.createLinearGradient(cx - 60, cy, cx + 60, cy);
+      flareGrd.addColorStop(0, 'rgba(255,220,180,0)');
+      flareGrd.addColorStop(0.3, 'rgba(255,230,200,0.15)');
+      flareGrd.addColorStop(0.5, 'rgba(255,245,235,0.3)');
+      flareGrd.addColorStop(0.7, 'rgba(255,230,200,0.15)');
+      flareGrd.addColorStop(1, 'rgba(255,220,180,0)');
+      ctx.fillStyle = flareGrd;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 60, 2.5, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      // vertical streak (shorter, dimmer)
+      const flareV = ctx.createLinearGradient(cx, cy - 35, cx, cy + 35);
+      flareV.addColorStop(0, 'rgba(200,220,255,0)');
+      flareV.addColorStop(0.3, 'rgba(200,220,255,0.08)');
+      flareV.addColorStop(0.5, 'rgba(230,240,255,0.18)');
+      flareV.addColorStop(0.7, 'rgba(200,220,255,0.08)');
+      flareV.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = flareV;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 1.5, 35, 0, 0, Math.PI*2);
+      ctx.fill();
+
+      // small hexagonal ghost artifacts along the flare
+      const ghosts = [{dx: 28, r: 5, a: 0.06}, {dx: -22, r: 3.5, a: 0.04}, {dx: 45, r: 8, a: 0.035}];
+      ghosts.forEach(function(g){
+        const gx = cx + g.dx;
+        const gg = ctx.createRadialGradient(gx, cy, 0, gx, cy, g.r);
+        gg.addColorStop(0, 'rgba(180,210,255,' + g.a + ')');
+        gg.addColorStop(0.6, 'rgba(160,200,255,' + (g.a * 0.4) + ')');
+        gg.addColorStop(1, 'rgba(160,200,255,0)');
+        ctx.fillStyle = gg;
+        ctx.beginPath();
+        ctx.arc(gx, cy, g.r, 0, Math.PI*2);
+        ctx.fill();
+      });
+
+      ctx.restore();
+
       // bright core
       ctx.beginPath();
       ctx.fillStyle = 'rgba(255,252,245,0.95)';
-      ctx.arc(comet.x, comet.y, 2.5, 0, Math.PI*2);
+      ctx.arc(cx, cy, 2.5, 0, Math.PI*2);
       ctx.fill();
     }
   }
