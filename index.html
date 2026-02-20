@@ -343,13 +343,13 @@
         const force = (1 - d / comet.radius);
         // store home position and original velocity for spring-back
         if(p.homeX === undefined){ p.homeX = p.x; p.homeY = p.y; p.origVx = p.vx; p.origVy = p.vy; p.settleDelay = 0; }
-        // immediate position displacement + velocity kick
+        // subtle position displacement + gentle velocity kick
         const pushX = (dx / d) * force;
         const pushY = (dy / d) * force;
-        p.x += pushX * 12;
-        p.y += pushY * 12;
-        p.vx += pushX * 8;
-        p.vy += pushY * 8;
+        p.x += pushX * 4;
+        p.y += pushY * 4;
+        p.vx += pushX * 2.5;
+        p.vy += pushY * 2.5;
         p.settleDelay = 0; // reset settle delay — comet is still nearby
       }
     }
@@ -393,29 +393,32 @@
     for(let i = 0; i < particles.length; i++){
       const p = particles[i];
       if(p.homeX !== undefined){
-        // let particles drift freely for 0.8s after last comet contact
+        // let particles drift freely for 1s after last comet contact, then settle over ~4s
         p.settleDelay = (p.settleDelay || 0) + s;
-        if(p.settleDelay < 0.8){
-          // just apply damping so they slow down naturally
-          p.vx *= Math.max(0, 1 - 0.5 * s);
-          p.vy *= Math.max(0, 1 - 0.5 * s);
+        if(p.settleDelay < 1.0){
+          // gentle natural damping while drifting
+          p.vx *= Math.max(0, 1 - 0.3 * s);
+          p.vy *= Math.max(0, 1 - 0.3 * s);
           continue;
         }
+        // ease-in the spring strength over 4 seconds (settleDelay 1.0 → 5.0)
+        const settleT = Math.min(1, (p.settleDelay - 1.0) / 4.0); // 0→1 over 4s
+        const springStr = 0.3 + settleT * 1.2; // ramps from 0.3 to 1.5
+        const dampStr = 0.8 + settleT * 1.5; // ramps from 0.8 to 2.3
         const dx = p.homeX - p.x;
         const dy = p.homeY - p.y;
         const d2 = dx*dx + dy*dy;
-        if(d2 < 2){
+        if(d2 < 1 && p.settleDelay > 4.5){
           p.x = p.homeX; p.y = p.homeY;
           p.vx = p.origVx; p.vy = p.origVy;
           delete p.homeX; delete p.homeY;
           delete p.origVx; delete p.origVy;
           delete p.settleDelay;
         } else {
-          // gentle spring + moderate damping
-          p.vx += dx * 1.5 * s;
-          p.vy += dy * 1.5 * s;
-          p.vx *= Math.max(0, 1 - 2.0 * s);
-          p.vy *= Math.max(0, 1 - 2.0 * s);
+          p.vx += dx * springStr * s;
+          p.vy += dy * springStr * s;
+          p.vx *= Math.max(0, 1 - dampStr * s);
+          p.vy *= Math.max(0, 1 - dampStr * s);
         }
       }
     }
