@@ -481,14 +481,26 @@
   update();
 })();
 
-// Accessibility: ensure scroller snaps to panels after wheel/scroll end
+// Translate vertical scroll/wheel into horizontal scrolling
+(function verticalToHorizontal(){
+  const scroller = document.getElementById('scroller');
+  if(!scroller) return;
+  scroller.addEventListener('wheel', function(e){
+    if(window.matchMedia('(max-width:720px)').matches) return; // mobile uses native vertical
+    if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){
+      e.preventDefault();
+      scroller.scrollLeft += e.deltaY;
+    }
+  }, {passive: false});
+})();
+
+// Ensure scroller snaps to panels after wheel/scroll end
 (function snapOnWheelEnd(){
   const scroller = document.getElementById('scroller');
   if(!scroller) return;
-  let isTouching = false;
   let timeout;
   function snapToNearest(){
-    if(window.matchMedia('(max-width:720px)').matches) return; // native vertical snap handles it
+    if(window.matchMedia('(max-width:720px)').matches) return;
     const panels = Array.from(scroller.querySelectorAll('.panel'));
     const center = scroller.scrollLeft + (scroller.clientWidth/2);
     let nearest = panels[0]; let dist = Infinity;
