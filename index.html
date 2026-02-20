@@ -331,7 +331,7 @@
       comet.trail[i].age += s;
       if(comet.trail[i].age > 0.6) comet.trail.splice(i, 1);
     }
-    // disrupt nearby particles — push them away
+    // disrupt nearby particles — push them away with immediate displacement
     const r2 = comet.radius * comet.radius;
     for(let i = 0; i < particles.length; i++){
       const p = particles[i];
@@ -340,11 +340,17 @@
       const d2 = dx*dx + dy*dy;
       if(d2 < r2 && d2 > 1){
         const d = Math.sqrt(d2);
-        const force = (1 - d / comet.radius) * 3.5;
+        const force = (1 - d / comet.radius);
         // store home position and original velocity for spring-back
-        if(p.homeX === undefined){ p.homeX = p.x; p.homeY = p.y; p.origVx = p.vx; p.origVy = p.vy; }
-        p.vx += (dx / d) * force;
-        p.vy += (dy / d) * force;
+        if(p.homeX === undefined){ p.homeX = p.x; p.homeY = p.y; p.origVx = p.vx; p.origVy = p.vy; p.settleDelay = 0; }
+        // immediate position displacement + velocity kick
+        const pushX = (dx / d) * force;
+        const pushY = (dy / d) * force;
+        p.x += pushX * 12;
+        p.y += pushY * 12;
+        p.vx += pushX * 8;
+        p.vy += pushY * 8;
+        p.settleDelay = 0; // reset settle delay — comet is still nearby
       }
     }
     // expire
@@ -381,27 +387,35 @@
     }
   }
 
-  // Spring-back: return disrupted particles to home positions then resume normal drift
+  // Spring-back: wait for comet to pass, then gently return particles home
   function springBack(dt){
     const s = dt / 1000;
     for(let i = 0; i < particles.length; i++){
       const p = particles[i];
       if(p.homeX !== undefined){
+        // let particles drift freely for 0.8s after last comet contact
+        p.settleDelay = (p.settleDelay || 0) + s;
+        if(p.settleDelay < 0.8){
+          // just apply damping so they slow down naturally
+          p.vx *= Math.max(0, 1 - 0.5 * s);
+          p.vy *= Math.max(0, 1 - 0.5 * s);
+          continue;
+        }
         const dx = p.homeX - p.x;
         const dy = p.homeY - p.y;
         const d2 = dx*dx + dy*dy;
-        if(d2 < 1){
-          // close enough — snap to home, restore original velocity, clear disruption state
+        if(d2 < 2){
           p.x = p.homeX; p.y = p.homeY;
           p.vx = p.origVx; p.vy = p.origVy;
           delete p.homeX; delete p.homeY;
           delete p.origVx; delete p.origVy;
+          delete p.settleDelay;
         } else {
-          // strong spring + heavy damping so they settle fast
-          p.vx += dx * 3.0 * s;
-          p.vy += dy * 3.0 * s;
-          p.vx *= Math.max(0, 1 - 4.0 * s);
-          p.vy *= Math.max(0, 1 - 4.0 * s);
+          // gentle spring + moderate damping
+          p.vx += dx * 1.5 * s;
+          p.vy += dy * 1.5 * s;
+          p.vx *= Math.max(0, 1 - 2.0 * s);
+          p.vy *= Math.max(0, 1 - 2.0 * s);
         }
       }
     }
