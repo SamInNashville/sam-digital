@@ -393,43 +393,57 @@
       ctx.arc(cx, cy, 18, 0, Math.PI*2);
       ctx.fill();
 
-      // lens flare — horizontal streak
+      // lens flare — oriented along comet's travel direction
       ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      const flareGrd = ctx.createLinearGradient(cx - 60, cy, cx + 60, cy);
-      flareGrd.addColorStop(0, 'rgba(255,220,180,0)');
-      flareGrd.addColorStop(0.3, 'rgba(255,230,200,0.15)');
-      flareGrd.addColorStop(0.5, 'rgba(255,245,235,0.3)');
-      flareGrd.addColorStop(0.7, 'rgba(255,230,200,0.15)');
-      flareGrd.addColorStop(1, 'rgba(255,220,180,0)');
-      ctx.fillStyle = flareGrd;
+      ctx.globalCompositeOperation = 'lighter';
+      const angle = Math.atan2(comet.vy, comet.vx);
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // main streak along travel axis
+      const streak1 = ctx.createLinearGradient(-80, 0, 80, 0);
+      streak1.addColorStop(0, 'rgba(255,220,180,0)');
+      streak1.addColorStop(0.35, 'rgba(255,235,210,0.25)');
+      streak1.addColorStop(0.5, 'rgba(255,250,240,0.5)');
+      streak1.addColorStop(0.65, 'rgba(255,235,210,0.25)');
+      streak1.addColorStop(1, 'rgba(255,220,180,0)');
+      ctx.fillStyle = streak1;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 60, 2.5, 0, 0, Math.PI*2);
+      ctx.ellipse(0, 0, 80, 3, 0, 0, Math.PI*2);
       ctx.fill();
 
-      // vertical streak (shorter, dimmer)
-      const flareV = ctx.createLinearGradient(cx, cy - 35, cx, cy + 35);
-      flareV.addColorStop(0, 'rgba(200,220,255,0)');
-      flareV.addColorStop(0.3, 'rgba(200,220,255,0.08)');
-      flareV.addColorStop(0.5, 'rgba(230,240,255,0.18)');
-      flareV.addColorStop(0.7, 'rgba(200,220,255,0.08)');
-      flareV.addColorStop(1, 'rgba(200,220,255,0)');
-      ctx.fillStyle = flareV;
+      // cross streak perpendicular
+      const streak2 = ctx.createLinearGradient(0, -45, 0, 45);
+      streak2.addColorStop(0, 'rgba(200,220,255,0)');
+      streak2.addColorStop(0.35, 'rgba(220,235,255,0.12)');
+      streak2.addColorStop(0.5, 'rgba(240,248,255,0.28)');
+      streak2.addColorStop(0.65, 'rgba(220,235,255,0.12)');
+      streak2.addColorStop(1, 'rgba(200,220,255,0)');
+      ctx.fillStyle = streak2;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, 1.5, 35, 0, 0, Math.PI*2);
+      ctx.ellipse(0, 0, 2, 45, 0, 0, Math.PI*2);
       ctx.fill();
 
-      // small hexagonal ghost artifacts along the flare
-      const ghosts = [{dx: 28, r: 5, a: 0.06}, {dx: -22, r: 3.5, a: 0.04}, {dx: 45, r: 8, a: 0.035}];
+      // wide soft bloom around the head
+      const bloom = ctx.createRadialGradient(0, 0, 0, 0, 0, 40);
+      bloom.addColorStop(0, 'rgba(255,245,230,0.2)');
+      bloom.addColorStop(0.4, 'rgba(255,230,200,0.08)');
+      bloom.addColorStop(1, 'rgba(255,220,180,0)');
+      ctx.fillStyle = bloom;
+      ctx.beginPath();
+      ctx.arc(0, 0, 40, 0, Math.PI*2);
+      ctx.fill();
+
+      // ghost orbs trailing behind along the flare axis
+      var ghosts = [{d: -35, r: 6, a: 0.1}, {d: -55, r: 9, a: 0.06}, {d: -75, r: 4, a: 0.08}];
       ghosts.forEach(function(g){
-        const gx = cx + g.dx;
-        const gg = ctx.createRadialGradient(gx, cy, 0, gx, cy, g.r);
-        gg.addColorStop(0, 'rgba(180,210,255,' + g.a + ')');
-        gg.addColorStop(0.6, 'rgba(160,200,255,' + (g.a * 0.4) + ')');
+        var gg = ctx.createRadialGradient(g.d, 0, 0, g.d, 0, g.r);
+        gg.addColorStop(0, 'rgba(180,215,255,' + g.a + ')');
+        gg.addColorStop(0.5, 'rgba(160,200,255,' + (g.a * 0.3) + ')');
         gg.addColorStop(1, 'rgba(160,200,255,0)');
         ctx.fillStyle = gg;
         ctx.beginPath();
-        ctx.arc(gx, cy, g.r, 0, Math.PI*2);
+        ctx.arc(g.d, 0, g.r, 0, Math.PI*2);
         ctx.fill();
       });
 
