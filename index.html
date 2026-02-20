@@ -162,6 +162,32 @@
   window.addEventListener('touchmove', updatePointer, {passive:true});
   window.addEventListener('pointerleave', ()=>{ pointer.x=-9999; pointer.y=-9999; }, {passive:true});
 
+  // Click pulse — subtle radial disruption
+  window.addEventListener('click', function(e){
+    const px = e.clientX;
+    const py = e.clientY;
+    const pulseRadius = 100;
+    const r2 = pulseRadius * pulseRadius;
+    for(var i = 0; i < particles.length; i++){
+      var p = particles[i];
+      var dx = p.x - px;
+      var dy = p.y - py;
+      var d2 = dx*dx + dy*dy;
+      if(d2 < r2 && d2 > 1){
+        var d = Math.sqrt(d2);
+        var force = (1 - d / pulseRadius);
+        if(p.homeX === undefined){ p.homeX = p.x; p.homeY = p.y; p.origVx = p.vx; p.origVy = p.vy; p.settleDelay = 0; }
+        var pushX = (dx / d) * force;
+        var pushY = (dy / d) * force;
+        p.x += pushX * 1;
+        p.y += pushY * 1;
+        p.vx += pushX * 0.6;
+        p.vy += pushY * 0.6;
+        p.settleDelay = 0;
+      }
+    }
+  }, {passive:true});
+
   // Parallax offsets based on horizontal scroll
   let parallaxOffset = 0; // 0..1 based on scroller
   const scroller = document.getElementById('scroller');
