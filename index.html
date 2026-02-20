@@ -161,9 +161,16 @@
   window.addEventListener('pointermove', updatePointer, {passive:true});
   window.addEventListener('touchmove', updatePointer, {passive:true});
   window.addEventListener('pointerleave', ()=>{ pointer.x=-9999; pointer.y=-9999; }, {passive:true});
+  // also track pointer through the scroller overlay
+  var scrollerForPointer = document.getElementById('scroller');
+  if(scrollerForPointer){
+    scrollerForPointer.addEventListener('pointermove', updatePointer, {passive:true});
+    scrollerForPointer.addEventListener('touchmove', updatePointer, {passive:true});
+  }
 
-  // Click pulse — subtle radial disruption
-  window.addEventListener('click', function(e){
+  // Click pulse — subtle radial disruption (listen on scroller which overlays canvas)
+  var scrollerEl = document.getElementById('scroller');
+  (scrollerEl || window).addEventListener('click', function(e){
     const px = e.clientX;
     const py = e.clientY;
     const pulseRadius = 100;
