@@ -51,47 +51,45 @@
   const mid = document.getElementById('mountains-mid');
   const trees = document.getElementById('trees-mid');
   const fg = document.getElementById('foreground');
-  if(!scroller || !far) return;
+  if(scroller && far){
+    // helper: set transform with translate3d for GPU
+    function setX(el, x){ el.style.transform = `translate3d(${x}px,0,0)` }
 
-  // helper: set transform with translate3d for GPU
-  function setX(el, x){ el.style.transform = `translate3d(${x}px,0,0)` }
+    function onScroll(){
+      const maxScroll = scroller.scrollWidth - scroller.clientWidth || 1;
+      const t = scroller.scrollLeft / maxScroll; // 0..1
+      const range = scroller.clientWidth; // rough viewport width
+      setX(far, -t * range * 0.15);
+      setX(mid, -t * range * 0.28);
+      setX(trees, -t * range * 0.5);
+      setX(fg, -t * range * 0.9);
+    }
 
-  function onScroll(){
-    const maxScroll = scroller.scrollWidth - scroller.clientWidth || 1;
-    const t = scroller.scrollLeft / maxScroll; // 0..1
-    const range = scroller.clientWidth; // rough viewport width
-    // translate layers in opposite direction for parallax effect
-    setX(far, -t * range * 0.15);
-    setX(mid, -t * range * 0.28);
-    setX(trees, -t * range * 0.5);
-    setX(fg, -t * range * 0.9);
+    let ticking = false;
+    scroller.addEventListener('scroll',()=>{ if(!ticking){requestAnimationFrame(()=>{onScroll();ticking=false}); ticking=true;} });
+    onScroll();
   }
 
-  // throttle with requestAnimationFrame
-  let ticking = false;
-  scroller.addEventListener('scroll',()=>{ if(!ticking){requestAnimationFrame(()=>{onScroll();ticking=false}); ticking=true;} });
-  // initial
-  onScroll();
+  if(scroller){
+    // keyboard arrows to navigate panels for accessibility
+    scroller.addEventListener('keydown', (e)=>{
+      if(e.key==='ArrowRight'){ e.preventDefault(); scroller.scrollBy({left:scroller.clientWidth,behavior:'smooth'});} 
+      if(e.key==='ArrowLeft'){ e.preventDefault(); scroller.scrollBy({left:-scroller.clientWidth,behavior:'smooth'});} 
+      if(e.key==='Home'){ e.preventDefault(); scroller.scrollTo({left:0,behavior:'smooth'});} 
+      if(e.key==='End'){ e.preventDefault(); scroller.scrollTo({left:scroller.scrollWidth,behavior:'smooth'});} 
+    });
+  }
 
-  // keyboard arrows to navigate panels for accessibility
-  scroller.addEventListener('keydown', (e)=>{
-    if(e.key==='ArrowRight'){ e.preventDefault(); scroller.scrollBy({left:scroller.clientWidth,behavior:'smooth'});} 
-    if(e.key==='ArrowLeft'){ e.preventDefault(); scroller.scrollBy({left:-scroller.clientWidth,behavior:'smooth'});} 
-    if(e.key==='Home'){ e.preventDefault(); scroller.scrollTo({left:0,behavior:'smooth'});} 
-    if(e.key==='End'){ e.preventDefault(); scroller.scrollTo({left:scroller.scrollWidth,behavior:'smooth'});} 
-  });
-
-  // anchor links: smooth scroll to panel
+  // anchor links: smooth scroll to panel (must always work)
   document.querySelectorAll('a[href^="#"]').forEach(a=>{
     a.addEventListener('click', (e)=>{
       const targetId = a.getAttribute('href').slice(1);
       const target = document.getElementById(targetId);
       if(target){ e.preventDefault();
-        if(window.matchMedia('(max-width:720px)').matches){ // vertical fallback
-          target.scrollIntoView({behavior:'smooth',block:'center'});
-        } else {
-          const left = target.offsetLeft;
-          scroller.scrollTo({left,behavior:'smooth'});
+        if(window.matchMedia('(max-width:720px)').matches){
+          target.scrollIntoView({behavior:'smooth',block:'start'});
+        } else if(scroller){
+          scroller.scrollTo({left: target.offsetLeft, behavior:'smooth'});
         }
       }
     });
