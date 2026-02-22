@@ -5,20 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sam Digital — Nashville Digital Services</title>
 <meta name="description" content="Sam Digital is a Nashville-based digital services agency specializing in software development, research, technical writing, and automation." />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet"></noscript>
 <style>
   /* Reset & base */
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial;
+    font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color:#e6eef8; background:#0b1020; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-    overflow:hidden; /* we control scrolling in the scroller */
+    overflow:hidden;
   }
   a{color:inherit}
 
-  /* Top nav (transparent over scene) */
+  /* Nav */
   nav{position:fixed;left:0;right:0;top:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:40;pointer-events:auto}
   .nav-inner{background:linear-gradient(180deg, rgba(10,12,18,0.45), rgba(10,12,18,0.15));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;padding:10px 14px;border:1px solid rgba(255,255,255,0.03);display:flex;gap:18px;align-items:center}
   .logo{font-weight:800;letter-spacing:-0.02em;color:#fff}
@@ -27,14 +25,33 @@
   .nav-links a:hover{background:rgba(255,255,255,0.03)}
   .nav-links a.active{background:rgba(159,211,255,0.12);color:#fff}
 
-  /* Horizontal scroller - each section is full viewport width and height */
-  .scroller{
-    position:fixed;inset:0;display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;will-change:transform;z-index:20;
-  }
-  .panel{min-width:100vw;height:100vh;flex:0 0 100vw;display:flex;align-items:center;justify-content:center;padding:88px 48px;scroll-snap-align:center;}
+  /* Scroller — horizontal panels */
+  .scroller{position:fixed;inset:0;display:flex;flex-direction:row;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;will-change:transform;z-index:20}
+  .panel{min-width:100vw;height:100vh;flex:0 0 100vw;display:flex;align-items:center;justify-content:center;padding:88px 48px;scroll-snap-align:center}
   .panel-inner{max-width:980px}
 
-  /* Vertical layout for mobile */
+  /* Content */
+  h1{font-size:clamp(28px,6vw,56px);line-height:1.03;margin-bottom:12px;color:#f6fbff}
+  h2{font-size:28px;color:#eaf4ff;margin-bottom:14px}
+  p{color:rgba(230,238,248,0.85);font-size:16px}
+  .badge{display:inline-block;margin-top:14px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.03);font-weight:600;font-size:12px}
+  .services-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:18px}
+  .service-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:18px;border-radius:12px}
+  .service-card h3{margin-bottom:6px}
+  .about-points{display:flex;gap:16px;margin-top:12px}
+  .about-point{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:10px}
+  .contact-box{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:20px;border-radius:12px;text-align:center}
+  .contact-box a.email{color:#9fd3ff;font-weight:700}
+  .section-label{color:#9fd3ff;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:12px;margin-bottom:8px}
+  a:focus{outline:2px solid rgba(159,211,255,0.25);outline-offset:4px;border-radius:6px}
+
+  /* Background layer — hidden until particles.js activates it */
+  .parallax-layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;opacity:0;transition:opacity 0.8s ease;display:none}
+  .parallax-layer.loaded{opacity:1;display:block}
+  .vignette{position:fixed;pointer-events:none;inset:0;z-index:35;background:radial-gradient(60% 40% at 50% 40%, rgba(0,0,0,0) 0%, rgba(2,6,10,0.12) 60%, rgba(2,6,10,0.34) 100%);mix-blend-mode:multiply;display:none}
+  .parallax-layer.loaded ~ .vignette{display:block}
+
+  /* === MOBILE === */
   @media (max-width:720px){
     body{overflow:auto;overflow-x:hidden}
     .scroller{position:relative;display:block;overflow:visible;height:auto;scroll-snap-type:none}
@@ -45,52 +62,14 @@
     .nav-inner{gap:8px;padding:8px 10px;flex-wrap:nowrap}
     .nav-links{gap:4px;flex-wrap:nowrap}
     .logo{font-size:0.9rem}
+    .services-grid{grid-template-columns:1fr}
+    .about-points{flex-direction:column}
   }
-
-  /* Content styles (keeps existing content) */
-  h1{font-size:clamp(28px,6vw,56px);line-height:1.03;margin-bottom:12px;color:#f6fbff}
-  h2{font-size:28px;color:#eaf4ff;margin-bottom:14px}
-  p{color:rgba(230,238,248,0.85);font-size:16px}
-  .badge{display:inline-block;margin-top:14px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.03);font-weight:600;font-size:12px}
-
-  /* Services grid */
-  .services-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:18px}
-  .service-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:18px;border-radius:12px}
-  .service-card h3{margin-bottom:6px}
-  @media (max-width:720px){.services-grid{grid-template-columns:1fr}}
-
-  /* About points */
-  .about-points{display:flex;gap:16px;margin-top:12px}
-  .about-point{flex:1;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:10px}
-  @media (max-width:720px){.about-points{flex-direction:column}}
-
-  /* Contact box */
-  .contact-box{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:20px;border-radius:12px;text-align:center}
-  .contact-box a.email{color:#9fd3ff;font-weight:700}
-
-  /* Footer */
-  footer{padding:28px 20px;text-align:center;color:rgba(200,210,225,0.6)}
-
-  /* Small helper for anchors (keyboard focus) */
-  a:focus{outline:2px solid rgba(159,211,255,0.25);outline-offset:4px;border-radius:6px}
-
-  /* Decorative: subtle vignette */
-  .vignette{position:fixed;pointer-events:none;inset:0;z-index:35;background:radial-gradient(60% 40% at 50% 40%, rgba(0,0,0,0) 0%, rgba(2,6,10,0.12) 60%, rgba(2,6,10,0.34) 100%);mix-blend-mode:multiply}
-
-  /* PERFORMANCE HINTS */
-  .parallax-layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;will-change:transform;transform:translateZ(0);opacity:0;transition:opacity 0.8s ease}
-  .parallax-layer.loaded{opacity:1}
-
-  /* On mobile: hide background initially, fade in after content paints */
-  @media (max-width:720px){
-    .parallax-layer{display:none}
-    .parallax-layer.loaded{display:block}
-    .vignette{display:none}
-  }
-
 </style>
 </head>
 <body>
+
+<!-- ====== CONTENT (renders immediately) ====== -->
 
 <nav>
   <div class="nav-inner">
@@ -105,22 +84,6 @@
   </div>
 </nav>
 
-<!-- Parallax background replaced with performant canvas particle system -->
-<div class="parallax-layer" aria-hidden="true">
-  <canvas id="bg-canvas" width="1600" height="900" style="width:100%;height:100%;display:block"></canvas>
-  <!-- Gradient mesh overlay using absolutely positioned divs for subtle color blobs -->
-  <div id="gradients" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0.9">
-    <div class="blob" style="position:absolute;width:800px;height:800px;border-radius:50%;left:-10%;top:10%;background:radial-gradient(circle at 30% 30%, rgba(63,132,255,0.18), rgba(45,58,120,0.06) 40%, transparent 60%);filter:blur(140px);transform:translate3d(0,0,0);"></div>
-    <div class="blob" style="position:absolute;width:900px;height:900px;border-radius:50%;left:40%;top:-20%;background:radial-gradient(circle at 60% 40%, rgba(142,86,255,0.14), rgba(45,24,90,0.04) 40%, transparent 60%);filter:blur(160px);transform:translate3d(0,0,0);"></div>
-    <div class="blob" style="position:absolute;width:700px;height:700px;border-radius:50%;left:75%;top:30%;background:radial-gradient(circle at 40% 60%, rgba(255,190,80,0.08), rgba(60,34,12,0.02) 40%, transparent 60%);filter:blur(120px);transform:translate3d(0,0,0);"></div>
-  </div>
-</div>
-
-<!-- Vignette -->
-<div class="vignette"></div>
-
-
-<!-- Horizontal scroller with panels -->
 <div id="scroller" class="scroller" tabindex="0">
   <section class="panel" id="home" aria-label="Home">
     <div class="panel-inner">
@@ -135,32 +98,20 @@
 
   <section class="panel" id="services" aria-label="Services">
     <div class="panel-inner">
-      <div class="section-label" style="color:#9fd3ff;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:12px;margin-bottom:8px">What We Do</div>
+      <div class="section-label">What We Do</div>
       <h2>Services</h2>
       <div class="services-grid" style="margin-top:6px">
-        <div class="service-card">
-          <h3>Software Development</h3>
-          <p>Custom scripts, apps, APIs, and integrations in Python, TypeScript, and more. From a quick fix to a full build — most projects delivered same-day or next-day.</p>
-        </div>
-        <div class="service-card">
-          <h3>Research &amp; Analysis</h3>
-          <p>Market research, data analysis, and competitive reports — structured, sourced, and ready to act on. Solid evidence for confident decisions.</p>
-        </div>
-        <div class="service-card">
-          <h3>Technical Writing</h3>
-          <p>Documentation, how-to guides, and process manuals that your team will actually use. Clear enough that nobody has to ask "how does this work?"</p>
-        </div>
-        <div class="service-card">
-          <h3>Automation</h3>
-          <p>If you do it more than twice, we can automate it. Data entry, file processing, email workflows, system integrations — reclaim your time.</p>
-        </div>
+        <div class="service-card"><h3>Software Development</h3><p>Custom scripts, apps, APIs, and integrations in Python, TypeScript, and more. From a quick fix to a full build — most projects delivered same-day or next-day.</p></div>
+        <div class="service-card"><h3>Research &amp; Analysis</h3><p>Market research, data analysis, and competitive reports — structured, sourced, and ready to act on. Solid evidence for confident decisions.</p></div>
+        <div class="service-card"><h3>Technical Writing</h3><p>Documentation, how-to guides, and process manuals that your team will actually use. Clear enough that nobody has to ask "how does this work?"</p></div>
+        <div class="service-card"><h3>Automation</h3><p>If you do it more than twice, we can automate it. Data entry, file processing, email workflows, system integrations — reclaim your time.</p></div>
       </div>
     </div>
   </section>
 
   <section class="panel" id="process" aria-label="How It Works">
     <div class="panel-inner">
-      <div class="section-label" style="color:#9fd3ff;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:12px;margin-bottom:8px">How It Works</div>
+      <div class="section-label">How It Works</div>
       <h2>Simple Process</h2>
       <div class="about-points">
         <div class="about-point"><h3>1. Tell Us What You Need</h3><p>Describe the problem — it doesn't have to be technical. We'll ask the right questions and figure out the best approach together. Free, no commitment.</p></div>
@@ -172,7 +123,7 @@
 
   <section class="panel" id="about" aria-label="About">
     <div class="panel-inner">
-      <div class="section-label" style="color:#9fd3ff;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:12px;margin-bottom:8px">Who We Are</div>
+      <div class="section-label">Who We Are</div>
       <h2>About</h2>
       <p style="max-width:760px;margin-bottom:14px">Sam Digital is a Nashville-based digital services shop backed by 40 years of software development experience — from video games to enterprise systems to AI. We've seen every kind of project and we bring that depth to every job, big or small.</p>
       <div class="about-points">
@@ -185,7 +136,7 @@
 
   <section class="panel" id="contact" aria-label="Contact">
     <div class="panel-inner">
-      <div class="section-label" style="color:#9fd3ff;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;font-size:12px;margin-bottom:8px">Let's Talk</div>
+      <div class="section-label">Let's Talk</div>
       <h2>Start a Conversation</h2>
       <div class="contact-box" style="margin-top:12px;max-width:540px">
         <p>Tell us what you're working on. We'll let you know if we can help — and how. No pressure, no pitch, just a straight answer within 24 hours.</p>
@@ -196,18 +147,31 @@
   </section>
 </div>
 
-<script src="ui.js" defer></script>
+<!-- ====== BACKGROUND (hidden until particles.js shows it) ====== -->
+
+<div class="parallax-layer" aria-hidden="true">
+  <canvas id="bg-canvas" style="width:100%;height:100%;display:block"></canvas>
+  <div id="gradients" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:0.9">
+    <div style="position:absolute;width:800px;height:800px;border-radius:50%;left:-10%;top:10%;background:radial-gradient(circle at 30% 30%, rgba(63,132,255,0.18), rgba(45,58,120,0.06) 40%, transparent 60%);filter:blur(140px);transform:translate3d(0,0,0)"></div>
+    <div style="position:absolute;width:900px;height:900px;border-radius:50%;left:40%;top:-20%;background:radial-gradient(circle at 60% 40%, rgba(142,86,255,0.14), rgba(45,24,90,0.04) 40%, transparent 60%);filter:blur(160px);transform:translate3d(0,0,0)"></div>
+    <div style="position:absolute;width:700px;height:700px;border-radius:50%;left:75%;top:30%;background:radial-gradient(circle at 40% 60%, rgba(255,190,80,0.08), rgba(60,34,12,0.02) 40%, transparent 60%);filter:blur(120px);transform:translate3d(0,0,0)"></div>
+  </div>
+</div>
+<div class="vignette"></div>
+
+<!-- ====== SCRIPTS (strategic load order) ====== -->
+<!-- 1. Nav — immediate interactivity -->
+<script src="nav.js" defer></script>
+<!-- 2. Scroll — desktop horizontal behavior -->
+<script src="scroll.js" defer></script>
+<!-- 3. Particles — eye candy, loaded LAST -->
 <script>
-// Desktop: load particles immediately (deferred). Mobile: load after content paints.
-if(window.matchMedia('(max-width:720px)').matches){
-  window.addEventListener('load', function(){
-    setTimeout(function(){
-      var s=document.createElement('script');s.src='particles.js';document.body.appendChild(s);
-    }, 200);
-  });
-} else {
-  var s=document.createElement('script');s.src='particles.js';s.defer=true;document.body.appendChild(s);
-}
+// Font: non-blocking
+var f=document.createElement('link');f.rel='stylesheet';f.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap';document.head.appendChild(f);
+// Particles: after everything else has loaded
+window.addEventListener('load',function(){
+  var s=document.createElement('script');s.src='particles.js';document.body.appendChild(s);
+});
 </script>
 </body>
 </html>
