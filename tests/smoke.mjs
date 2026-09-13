@@ -1,0 +1,35 @@
+import { buildMailto } from '../src/contact.js';
+import { chromium, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { mkdir, writeFile } from 'node:fs/promises';
+const base = process.env.BASE_URL || 'http://127.0.0.1:4178/sam-digital/';
+const browser = await chromium.launch({channel:'chrome',headless:true});
+await mkdir('proof',{recursive:true});
+const results=[];
+async function check(name, fn) { try { const evidence=await fn(); results.push({name,pass:true,evidence}); console.log('PASS',name,JSON.stringify(evidence||'')); } catch(e) { results.push({name,pass:false,error:e.message}); console.error('FAIL',name,e.message); } }
+const context=await browser.newContext({viewport:{width:1440,height:1000}});
+const page=await context.newPage();
+
+const errors=[];page.on('pageerror', e=>errors.push(e.message));
+page.on('console', m=>{if(m.type()==='error') errors.push(m.text());});
+await page.goto(base);await page.evaluate(()=>document.fonts.ready);
+const frames=()=>page.locator('#signal').getAttribute('data-frames').then(Number);
+await check('Real WebGPU initializes and draws',async()=>{await expect(page.locator('#signal')).toHaveAttribute('data-renderer','webgpu',{timeout:20000}); const first=await frames(); await expect.poll(frames).toBeGreaterThan(first);return await page.locator('#signal').evaluate(e=>({...e.dataset}));});
+await check('Pause stops rendering; resume restarts',async()=>{await page.locator('#motion-toggle').click(); await expect(page.locator('#motion-toggle')).toHaveAttribute('aria-pressed','true');const n=await frames();await page.waitForTimeout(250);expect(await frames()).toBe(n);await page.screenshot({path:'proof/desktop-hero.png',animations:'disabled'});await page.locator('#motion-toggle').click();await expect.poll(frames).toBeGreaterThan(n);});
+await check('Offscreen rendering stops',async()=>{await page.locator('#contact').scrollIntoViewIfNeeded();await page.waitForTimeout(300);const n=await frames();await page.waitForTimeout(250);expect(await frames()).toBe(n);});
+await check('Every internal anchor has a target',async()=>{const broken=await page.evaluate(()=>[...document.querySelectorAll('a[href^="#"]')].map(a=>a.getAttribute('href')).filter(h=>!document.querySelector(h)));expect(broken).toEqual([]);});
+await check('All service cards preselect the correct contact option',async()=>{const cards=page.locator('[data-service]');for(let i=0;i<await cards.count();i++){const c=cards.nth(i);const s=await c.getAttribute('data-service');await c.click();await expect(page.locator('#service')).toHaveValue(s);}return {cards:await cards.count()};});
+await check('Brief required field rejects empty submission',async()=>{await page.locator('#brief').fill('');await page.locator('form button').click();expect(await page.locator('#brief').evaluate(e=>e.validity.valid)).toBe(false);});
+await check('Keyboard skip link works',async()=>{await page.goto(base);await page.keyboard.press('Tab');await expect(page.locator('.skip')).toBeFocused();await page.keyboard.press('Enter');await expect(page).toHaveURL(/#main$/);});
+await check('Desktop accessibility WCAG 2 A/AA',async()=>{const r=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);return {violations:r.violations.length};});
+await check('Responsive widths: 320, 390, 768, 1024, 1440',async()=>{const widths=[320,390,768,1024,1440];for(const width of widths){await page.setViewportSize({width,height:900});expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);}return widths;});
+await page.setViewportSize({width:390,height:844});await page.goto(base);await page.evaluate(()=>document.fonts.ready);await expect(page.locator('#signal')).toHaveAttribute('data-renderer','webgpu',{timeout:20000});await page.locator('#motion-toggle').click();await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await page.screenshot({path:'proof/mobile.png',fullPage:true,animations:'disabled'});
+await check('Mobile accessibility WCAG 2 A/AA',async()=>{const r=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);return {violations:r.violations.length};});
+await check('Reduced-motion loads paused and respects preference changes',async()=>{await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await expect(page.locator('#signal')).toHaveAttribute('data-renderer','webgpu',{timeout:20000});await expect(page.locator('#motion-toggle')).toHaveAttribute('aria-pressed','true');await page.waitForTimeout(150);const n=await frames();await page.waitForTimeout(250);expect(await frames()).toBe(n);await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('#signal').scrollIntoViewIfNeeded();await expect.poll(frames).toBeGreaterThan(n);});
+await check('WebGPU unavailable: static fallback and usable contact',async()=>{const p=await browser.newPage();await p.addInitScript(()=>Object.defineProperty(navigator,'gpu',{value:undefined}));await p.goto(base);await expect(p.locator('#signal')).toHaveAttribute('data-renderer','fallback');await expect(p.locator('.signal-fallback')).toBeVisible();await expect(p.locator('#motion-toggle')).toBeHidden();await p.locator('[data-service="Automation"]').click();await expect(p.locator('#service')).toHaveValue('Automation');await p.screenshot({path:'proof/fallback.png'});await p.close();});
+await check('GPU adapter rejection is safe',async()=>{const p=await browser.newPage();await p.addInitScript(()=>Object.defineProperty(navigator,'gpu',{value:{requestAdapter:async()=>null}}));await p.goto(base);await expect(p.locator('#signal')).toHaveAttribute('data-renderer','fallback');await expect(p.locator('.email')).toHaveAttribute('href','mailto:sam-in-nashville@pm.me');await p.close();});
+await check('Without JavaScript content, fallback and email remain',async()=>{const p=await browser.newPage({javaScriptEnabled:false});await p.goto(base);await expect(p.locator('h1')).toBeVisible();await expect(p.locator('#fallback-lines path')).toHaveCount(76);await expect(p.locator('.email')).toHaveAttribute('href','mailto:sam-in-nashville@pm.me');await p.close();});
+await check('Mail draft preserves Unicode and reserved characters',async()=>{const text='Résumé & pricing? #1 + 50% \nhello@example.com';const url=new URL(buildMailto('Research and analysis',text));expect(url.protocol).toBe('mailto:');expect(url.pathname).toBe('sam-in-nashville@pm.me');expect(url.searchParams.get('subject')).toBe('Project inquiry: Research and analysis');expect(url.searchParams.get('body')).toContain(text);return {recipient:url.pathname};});
+await check('No JavaScript or console errors',async()=>{expect(errors).toEqual([]);return errors;});
+await writeFile('proof/test-results.json',JSON.stringify(results,null,2));await browser.close();
+const failed=results.filter(r=>!r.pass);console.log(`${results.length-failed.length}/${results.length} checks passed`);process.exitCode=failed.length?1:0;
