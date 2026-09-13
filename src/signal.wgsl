@@ -4,14 +4,14 @@ const TAU = 6.283185307;
 fn turn(p: vec2f, a: f32) -> vec2f { return mat2x2f(cos(a), sin(a), -sin(a), cos(a)) * p; }
 fn position(a: f32, b: f32) -> vec3f {
   let t = params.time;
-  let evolve = 0.55 + 0.45 * sin(t * 0.25);
+  let evolve = 0.55 + 0.45 * sin(t * 0.40);
   let radius = 0.80 + 0.17 * sin(a * 3.0 + t * 0.50) * evolve + 0.065 * sin(a * 2.0 - t * 0.38);
   let height = 0.18 * sin(a * 2.0 + t * 0.5) + 0.10 * cos(a * 3.0 - t * 0.35);
   let thickness = 0.25 + 0.045 * sin(a * 3.0 - t * 0.75);
   let crossSection = turn(vec2f(cos(b), sin(b) * (0.65 + 0.15 * cos(a * 2.0 + t * 0.4))) * thickness, a + sin(t * 0.35));
   let p = vec3f((radius + crossSection.x) * cos(a), (radius + crossSection.x) * sin(a), height + crossSection.y);
   let yz = turn(p.yz, -0.75 - sin(t * 0.3) * 0.28 + params.pointer.y * 0.5 + params.rotation.y);
-  let xz = turn(vec2f(p.x, yz.y), params.rotation.x);
+  let xz = turn(vec2f(p.x, yz.y), params.rotation.x + t * 0.22);
   let xy = turn(vec2f(xz.x, yz.x), 0.35 + sin(t * 0.19) * 0.30 - params.pointer.x * 0.42);
   var world = vec3f(xy, xz.y);
   let cursor = params.pointer * 1.35;

@@ -1,4 +1,6 @@
 import { buildMailto } from './contact.js';
+import { startParallax } from './parallax.js';
+startParallax();
 const form = document.querySelector('#brief-form');
 form.hidden = false;
 const service = document.querySelector('#service');
@@ -16,10 +18,6 @@ form.addEventListener('submit', (event) => {
 });
 document.querySelector('#brief').addEventListener('input', (e) => e.target.setCustomValidity(''));
 // The business remains fully usable before (or without) this enhancement.
-if (navigator.gpu && !navigator.connection?.saveData) {
-  import('./signal.js').then(({ startSignal }) => startSignal()).catch(() => {
-    document.querySelector('#signal').dataset.renderer = 'fallback';
-  });
-} else {
+import('./signal.js').then(({ startSignal }) => startSignal()).catch(() => {
   document.querySelector('#signal').dataset.renderer = 'fallback';
-}
+});

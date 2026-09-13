@@ -1,5 +1,4 @@
-import { init, surface } from 'vgpu';
-import { createSignalRenderer } from './signal-renderer.js';
+import { createFallbackRenderer } from './signal-fallback.js';
 
 export async function startSignal() {
   const host = document.querySelector('#signal');
@@ -7,25 +6,31 @@ export async function startSignal() {
   const canvas = document.querySelector('#signal-canvas');
   const button = document.querySelector('#motion-toggle');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  let gpu, output, renderer, raf = 0, timer = 0, previous = 0, lastDraw = 0;
-  let visible = true, paused = motion.matches, dead = false;
+  let gpu, output, raf = 0, timer = 0, previous = 0, lastDraw = 0;
+  let visible = true, paused = motion.matches, dead = false, gpuFailed = false;
+  const fallbackRenderer = createFallbackRenderer(host);
+  let renderer = fallbackRenderer;
   let pointer = [0, 0], smoothed = [0, 0], velocity = [0, 0];
   let hover = 0, presence = 0, energy = 0, pulse = 0, lastMove = 0;
+  let maxEdge = 640, slowSeconds = 0;
   let dragging = false, dragPoint = [0,0], rotation = [0,0], spin = [0,0];
   const stop = () => { cancelAnimationFrame(raf); raf = 0; previous = 0; lastDraw = 0; };
   const fallback = (error) => {
-    if (dead) return;
+    if (gpuFailed) return;
+    gpuFailed = true;
     host.dataset.error = error?.message || 'GPU device unavailable or lost';
-    dead = true; stop(); host.dataset.renderer = 'fallback'; button.hidden = true;
-    gpu?.dispose();
+    renderer = fallbackRenderer; host.dataset.renderer = 'canvas2d';
+    fallbackRenderer.resize(); gpu?.dispose();
+    if (paused && visible) draw();
   };
   const size = () => {
-    if (!output || dead) return;
+    fallbackRenderer.resize();
+    if (!output || dead || gpuFailed) return;
     // Decorative GPU work gets a fixed resolution budget and 30 fps ceiling.
-    const edge = Math.min(640, Math.round(host.clientWidth * Math.min(devicePixelRatio, 1.25)));
+    const edge = Math.min(maxEdge, Math.round(host.clientWidth * Math.min(devicePixelRatio, 1.25)));
     if (output.size[0] !== edge) { output.resize([edge, edge]); renderer?.resize(); }
   };
-  const params = () => ({ resolution: output.size, pointer: smoothed, time: timer, energy, presence, pulse, rotation });
+  const params = () => ({ resolution: output?.size ?? [640,640], pointer: smoothed, time: timer, energy, presence, pulse, rotation });
   const draw = () => {
     if (dead) return;
     try {
@@ -40,6 +45,10 @@ export async function startSignal() {
       const dt = lastDraw ? Math.min((now - lastDraw) / 1000, .08) : 1 / 30;
       previous = previous ? now - ((now - previous) % (1000 / 30)) : now;
       lastDraw = now; timer += dt;
+      if (host.dataset.renderer === 'webgpu' && maxEdge > 480) {
+        slowSeconds = Math.max(0,slowSeconds + (dt > .045 ? dt : -.08));
+        if (slowSeconds > 1.25) { maxEdge = 480; size(); host.dataset.quality = 'balanced'; }
+      }
       // Damped spring: fast input has weight, but release settles without jitter.
       for (let i = 0; i < 2; i++) {
         velocity[i] += ((pointer[i] - smoothed[i]) * 42 - velocity[i] * 11) * dt;
@@ -70,14 +79,9 @@ export async function startSignal() {
     const rect = host.getBoundingClientRect();
     return [Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width - .5) * 2)), Math.max(-1, Math.min(1, (.5 - (event.clientY - rect.top) / rect.height) * 2))];
   };
-  try {
-    gpu = await init({ powerPreference: 'low-power' });
-    gpu.onError(fallback); gpu.gpu.lost.then(fallback);
-    output = surface(gpu, canvas, { size: [600, 600], autoResize: false, dpr: 1 });
-    size(); renderer = await createSignalRenderer(gpu, output);
-    draw(); await gpu.settled(); await gpu.gpu.queue.onSubmittedWorkDone();
-    if (dead) return;
-    host.dataset.renderer = 'webgpu'; button.hidden = false;
+    // Immediate live motion, even before the GPU module/device is ready.
+    host.dataset.renderer = 'canvas2d'; button.hidden = false;
+    size(); draw();
     new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }, { threshold: 0 }).observe(host);
     new ResizeObserver(() => { size(); if (paused && visible) draw(); }).observe(host);
     // Track across the hero, so interaction isn't hidden in a tiny hit target.
@@ -111,10 +115,24 @@ export async function startSignal() {
       if (event.key === 'Escape') { rotation=[0,0]; spin=[0,0]; release(); }
     });
     hero.addEventListener('pointercancel', release, { passive: true });
-    button.addEventListener('click', () => { paused = !paused; release(); sync(); });
+    button.addEventListener('click', () => { paused = !paused; release(); document.dispatchEvent(new CustomEvent('site-motion',{detail:{paused}})); sync(); });
     motion.addEventListener('change', () => { paused = motion.matches; release(); sync(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) release(); sync(); });
     window.addEventListener('pagehide', stop); window.addEventListener('pageshow', sync);
     sync();
-  } catch (error) { fallback(error); }
+    if (!navigator.gpu || navigator.connection?.saveData) return;
+    try {
+      const [{init,surface},{createSignalRenderer}] = await Promise.all([import('vgpu'),import('./signal-renderer.js')]);
+      gpu = await init({powerPreference:'low-power'});
+      gpu.onError(fallback); gpu.gpu.lost.then(fallback);
+      output = surface(gpu,canvas,{size:[600,600],autoResize:false,dpr:1});
+      size();
+      const readyRenderer = await createSignalRenderer(gpu,output);
+      if (gpuFailed) return;
+      readyRenderer.render(params());
+      await gpu.settled(); await gpu.gpu.queue.onSubmittedWorkDone();
+      if (gpuFailed) return;
+      renderer = readyRenderer; host.dataset.renderer = 'webgpu';
+      if (paused) draw();
+    } catch(error) { fallback(error); }
 }

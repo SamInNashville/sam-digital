@@ -1,5 +1,6 @@
 import {draw, effect, target, sampler, frame} from 'vgpu';
 import source from './signal.wgsl?raw';
+import particleSource from './signal-particles.wgsl?raw';
 const compositeSource = `
 struct Params { resolution: vec2f, pointer: vec2f, time: f32, energy: f32, presence: f32, pulse: f32, rotation: vec2f }
 @group(0) @binding(0) var<uniform> params: Params;
@@ -49,11 +50,13 @@ export async function createSignalRenderer(gpu, output) {
  const indexBuffer=gpu.gpu.createBuffer({size:indices.byteLength,usage:GPUBufferUsage.INDEX,mappedAtCreation:true});
  new Uint16Array(indexBuffer.getMappedRange()).set(indices);indexBuffer.unmap();
  const sculpture=draw(gpu,{shader:source,geometry:{indexBuffer,indexCount:indices.length,indexFormat:'uint16'},cull:'none',set:{params:initial},label:'Living Signal / indexed parametric mesh'});
+ const dust=draw(gpu,{shader:particleSource,vertices:6,instances:160*4,blend:'additive',depth:{write:false,compare:'less-equal'},set:{params:initial},label:'Living Signal / orbit trails'});
  const composite=effect(gpu,compositeSource,{set:{params:initial,scene:scene.color,linear:sampler(gpu,{minFilter:'linear',magFilter:'linear'})},label:'Living Signal / bloom & energy'});
  await sculpture.compile(scene);
+ await dust.compile(scene);
  await composite.compile({colors:[navigator.gpu.getPreferredCanvasFormat()]});
  return {
   resize(){scene.resize(output.size);composite.set({scene:scene.color});},
-  render(values){const params={...initial,...values,resolution:output.size};sculpture.set({params});composite.set({params});frame(gpu,f=>{f.pass({target:scene,clear:[0,0,0,0]},p=>p.draw(sculpture));f.pass(output,composite);});}
+  render(values){const params={...initial,...values,resolution:output.size};sculpture.set({params});dust.set({params});composite.set({params});frame(gpu,f=>{f.pass({target:scene,clear:[0,0,0,0]},p=>{p.draw(sculpture);p.draw(dust);});f.pass(output,composite);});}
  };
 }
