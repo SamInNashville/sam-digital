@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Signal render proof</title><body style="margin:0;background:#141613"><canvas width="512" height="512" style="width:512px;height:512px"></canvas><script type="module">
+import {init,surface} from 'vgpu';
+import {createSignalRenderer} from '../src/signal-renderer.js';
+const gpu=await init({powerPreference:'low-power'});
+const errors=[];gpu.onError(e=>errors.push(e.message));
+const output=surface(gpu,document.querySelector('canvas'),{size:[512,512],autoResize:false});
+const renderer=await createSignalRenderer(gpu,output);
+window.renderSignal=async(params)=>{renderer.render({pointer:[0,0],time:0,energy:0,presence:0,pulse:0,rotation:[0,0],...params});await gpu.settled();await gpu.gpu.queue.onSubmittedWorkDone();if(errors.length)throw Error(errors.join(';'));return document.querySelector('canvas').toDataURL();};
+</script></body></html>
