@@ -1,68 +1,54 @@
-# Sam Digital — Signal redesign
+# Sam Digital — conversation-first enquiry guide
 
-Source branch: `redesign/vgpu-signal`. Based on the published `SamInNashville/sam-digital` repository. The older dirty checkout at `/Users/sam/clawd/sam-digital-site` was not modified.
+Source branch: `redesign/conversation-first`. Public-site replacement requires approval. The old copper sculpture version remains preserved on `redesign/vgpu-signal` and in the existing publication worktree. The older dirty `/Users/sam/clawd/sam-digital-site` checkout is untouched.
 
-## Run
-
-Node 22.12+ (or compatible Vite-supported Node). Dependencies pinned in package-lock.json.
+## Run and verify
 
 ```sh
 npm ci --ignore-scripts
 npm run build
 npm run preview -- --port 4178 --strictPort
+# In another terminal:
+node tests/concierge-ui.mjs
+node tests/concierge-visual.mjs
+node tests/concierge-real.mjs
 ```
 
-Open http://127.0.0.1:4178/sam-digital/ . Development: `npm run dev`.
+Open http://127.0.0.1:4178/sam-digital/ . HTTPS or localhost is required for WebGPU. The real-model test uses an isolated Chrome profile at `/Users/sam/sam-digital-ai-test-profile` so downloaded model assets can be reused.
 
-## Verify
+## Product contract
 
-With the preview server running and Google Chrome installed:
+- Opening: exactly **How can I help you?**, a text composer and five clickable common company/project questions.
+- A two-second CSS intro runs independently of model startup. Reduced motion bypasses the animation. The inline intro timer does not depend on model readiness; JavaScript-free users retain the company information and direct email.
+- Model preparation starts on module initialization. A compatible, ready browser-native model is preferred; otherwise a Web Worker loads Qwen 2.5 1.5B through pinned `@mlc-ai/web-llm@0.2.85`. No API keys, cloud inference, company-code imports, telemetry or automatic enquiry submission.
+- Initial model downloads can take substantially longer than the intro. The user can type or click a question immediately; requests wait for readiness. **Researching your request** appears after submission, with honest loading detail if generation has not started.
+- vgpu 0.4.1 renders procedural ethereal smoke while idle. Submitted requests illuminate a decorative synapse graph with moving light pulses. The graph represents UI activity, not actual model internals. It settles after completion; static gradients remain if WebGPU fails.
+- Background resolution is capped to a 560px longest edge, at about 12 fps idle / 8 fps during a request, with pause, hidden-tab suspension and reduced-motion support. Inference runs separately in a worker, but both still share hardware resources.
+- AI scope: basic company facts and a helpful path toward a real human-reviewed job request. One relevant follow-up at a time. No invented prices, guaranteed timelines, live research, access to customer systems, or promises to perform work in chat.
+- Follow-up buttons cover service categories and selected tool, volume and timing questions. Text entry always remains available.
+- The editable enquiry uses the visitor's own messages, not a binding AI-written specification. Opening a mailto draft does not send it. No messages are persisted by the application; model assets are browser-cached.
 
-```sh
-node tests/smoke.mjs
-node tests/kinetic.mjs
-```
+## Implementation
 
-Tests launch real Chrome with real WebGPU, not a mocked renderer. Results and screenshots go in `proof/`. GPU initialization has a bounded cold-start timeout. Accessibility checks use axe against WCAG 2 A/AA and 2.1 AA rules; they are automated checks, not a certification or replacement for screen-reader testing.
+`index.html`, `src/concierge.css`: new prompt-first presentation.
+`src/concierge.js`: conversation UI, common/follow-up buttons, pending/cancellation state, editable enquiry and encoded mailto.
+`src/local-assistant.js`: authored company instructions, native/worker routing and lifecycle.
+`src/concierge-worker.js`: WebLLM loading, one-token warm-up, bounded streaming replies.
+`src/atmosphere.js`, `src/atmosphere.wgsl`: actual vgpu smoke and synapse rendering.
 
-## Interaction-specific verification
+The uploaded Cogility mini-ai package was inspected as architectural guidance. Its restricted package source and dependencies were not copied into this public-site implementation.
 
-With `npm run dev -- --port 4180 --strictPort` running:
+## Evidence and limitations
 
-```sh
-node tests/evolution.mjs
-```
+- `tests/concierge-ui.mjs`: 17 deterministic UI checks using an explicitly mocked model worker. This verifies intro timing, eager initialization, all five initial buttons, follow-up buttons, queued/loading/stopped requests, editable Unicode mail drafts, responsive layout, automated accessibility, unavailable-GPU and no-JS paths. It does NOT prove model correctness.
+- `tests/concierge-visual.mjs`: real vgpu pixel changes for smoke and travelling signals, stable pause, reduced motion and mobile. Only the model response is held as an explicit fixture.
+- `tests/concierge-real.mjs`: genuine local model download, warm-up and three generated answers. No fixture responses. Results/screenshots are in `proof/concierge/`.
+- The first 0.5B candidate was rejected after producing inappropriate quote/task-execution language. The 1.5B candidate's reviewed test answers respected the price/date boundary and asked which tools were involved in an automation job.
+- One measured cold 1.5B startup was 18,450ms, with full replies taking 877–2,264ms. These are test-host observations, not a two-second loading guarantee or device-independent performance claim.
+- Model correctness is probabilistic. The reviewed questions are not a comprehensive adversarial certification. Native/browser compatibility and cold downloads remain device-dependent. Full automatic sending and a hosted inference fallback are not implemented.
+- Recent context sent to the worker is bounded; the full visible user enquiry remains reviewable. Start fresh clears the in-memory chat.
+- Earlier sculpture tests remain historical; they do not describe the new entrypoint.
 
-This uses the production renderer with fixed times and pointer states, compares real GPU pixels, and writes a contact sheet. It proves pointer deformation independently of idle animation. With the built preview on port 4178:
+## Publishing
 
-```sh
-node tests/interaction.mjs
-node tests/performance.mjs
-# Optional bounded actual browser recording:
-RECORD_VIDEO=1 node tests/interaction.mjs
-```
-
-The performance probe compares active rendering to the same browser's paused requestAnimationFrame baseline; a slow test host is not proof of a slow shader. The indexed rasterization version matched approximately 20 fps available in one paired test. This is measured test-host throughput, not a guarantee for every device. Browser automation/video capture lowers measured throughput further.
-
-## Structure
-
-- `index.html`: semantic, server-independent content and a JS-free inline SVG fallback.
-- `src/style.css`: responsive copper/ivory/charcoal visual system. Google Fonts uses `display=swap` and system fallbacks.
-- `src/main.js`, `src/contact.js`: service preselection and a safely encoded mailto draft. No server, form submission, tracking, or automatic email sending. The optional form is hidden when JS is unavailable; the direct email link remains usable.
-- `src/signal.js`, `src/signal-renderer.js`, `src/signal.wgsl`: genuine vgpu 0.4.1 / WebGPU indexed parametric copper sculpture. Continuous deformation, cursor attraction, inertial drag rotation, movement-reactive highlights/sparks, and click/tap pulses. Depth testing, 4× MSAA, and bloom composition; 30 fps ceiling, max 640×640 buffer, offscreen/background suspension, pause/resume, and reduced-motion support. Keyboard: focus sculpture; arrows rotate, Enter/Space pulse, Escape resets. Save-Data skips GPU loading. GPU errors revert to the animated Canvas2D wire sculpture without affecting content. Sustained low cadence reduces the GPU buffer to 480×480 once.
-- `src/signal-particles.wgsl`: autonomous orbiting particle trails, influenced by the pointer.
-- `src/parallax.js`, `src/motion.css`: native-scroll depth planes, opposite-direction hero movement, scroll-scrubbed typography, experience panel, reduced-motion/pause support.
-- `src/signal-fallback.js`: shared-control animated non-WebGPU fallback.
-- `nav.js`, `particles.js`, `scroll.js`: legacy originals retained for reference, not imported or shipped in `dist`.
-
-The GPU module is lazy-loaded separately from the small contact/UI script. WebGPU requires HTTPS or localhost. Unsupported browsers get an animated Canvas2D sculpture; without JavaScript the authored SVG remains. No WebGPU polyfill and no backend dependencies.
-
-## Publishing — approval required
-
-The first redesign was published in main commit `e8873cb`; subsequent motion and parallax revisions use the same publication worktree and Pages configuration. `dist/` is the deployable static site; source `index.html` is NOT a drop-in Pages deployment because its module imports require the Vite build. The Vite base is `/sam-digital/` for the existing GitHub Pages path.
-
-After approval, the verified current Pages source is the root of `main` (`build_type: legacy`). Publish the contents of `dist` to that publishing root, or explicitly approve changing Pages to a build workflow. Preserve the prior published commit for rollback. Verify the remote page and hashed JS/CSS assets after publishing. Do not publish `node_modules`, test proof, or source-only files.
-
-## Content decisions
-
-The existing services, email address, Nashville location, fixed-quote positioning, and 40-year experience claim were retained. Copy was tightened for review. No invented client logos, testimonials, case studies, or project outcome metrics. The uncommitted older checkout included a placeholder portfolio GitHub URL; it was deliberately not imported into this redesign.
+The existing GitHub Pages setup serves the root of `main` (`legacy`). Build with Vite's `/sam-digital/` base and publish `dist` only after approval. Do not publish source, the mini-ai archive, browser profiles, node_modules or test proof. Preserve the previous publication commit for rollback. Verify the deployed HTML/assets and run the UI/visual tests against `BASE_URL` after deployment.
