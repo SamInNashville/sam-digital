@@ -8,6 +8,7 @@ await page.addInitScript(()=>{Object.defineProperty(window,'LanguageModel',{valu
 const readActivity=()=>page.locator('#atmosphere').getAttribute('data-activity').then(Number);
 try{
  await page.goto(process.env.BASE_URL||'http://127.0.0.1:4183/sam-digital/');await expect(page.locator('#atmosphere')).toHaveAttribute('data-renderer','webgpu',{timeout:20000});await expect(page.locator('#intro')).toHaveCount(0);
+ await expect(page.locator('#atmosphere')).toHaveAttribute('data-atom-count','0');
  await expect.poll(readActivity).toBeLessThan(.001);
  await page.locator('#prompt').pressSequentially('I would like help with my website.',{delay:80});
  await expect(page.locator('#atmosphere')).toHaveAttribute('data-thinking','typing');expect(await readActivity()).toBeGreaterThan(.2);await page.screenshot({path:'proof/thinking/typing.png'});
