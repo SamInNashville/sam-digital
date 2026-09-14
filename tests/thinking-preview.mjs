@@ -13,7 +13,7 @@ try{
  await page.locator('#prompt').pressSequentially('I would like help with my website.',{delay:80});
  await expect(page.locator('#atmosphere')).toHaveAttribute('data-thinking','typing');expect(await readActivity()).toBeGreaterThan(.2);await page.screenshot({path:'proof/thinking/typing.png'});
  await page.locator('#composer').evaluate(f=>f.requestSubmit());await expect(page.locator('#atmosphere')).toHaveAttribute('data-thinking','responding');await expect.poll(readActivity).toBeGreaterThan(.9);
- const start=Date.now(),frames=Number(await page.locator('#atmosphere').getAttribute('data-frames'));await page.waitForTimeout(4000);const fps=(Number(await page.locator('#atmosphere').getAttribute('data-frames'))-frames)/((Date.now()-start)/1000);
+ const start=Date.now(),frames=Number(await page.locator('#atmosphere').getAttribute('data-frames'));await page.waitForTimeout(8000);expect(await readActivity()).toBeGreaterThan(.99);const fps=(Number(await page.locator('#atmosphere').getAttribute('data-frames'))-frames)/((Date.now()-start)/1000);
  await page.screenshot({path:'proof/thinking/responding.png'});
  await page.evaluate(()=>{window.fixtureWorker.onmessage({data:{type:'delta',id:window.requestId,text:'I can help you prepare that enquiry. What should work better?'}});window.fixtureWorker.onmessage({data:{type:'done',id:window.requestId}});});
  await expect(page.locator('#atmosphere')).toHaveAttribute('data-thinking','idle');await expect.poll(readActivity).toBeLessThan(.001);await page.waitForTimeout(1000);await page.screenshot({path:'proof/thinking/finished.png'});
