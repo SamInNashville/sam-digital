@@ -28,7 +28,7 @@ function suggested(){
 function recentMessages(){let messages=history.slice(-8);while(messages.length>2&&messages.reduce((n,m)=>n+m.content.length,0)>7000)messages=messages.slice(2);if(messages[0]?.role!=='user')messages=messages.slice(1);return messages;}
 async function submit(text){
  text=text.trim().slice(0,1200);if(!text||current)return;
- const id=++version;history.push({role:'user',content:text});input.value='';document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;
+ const id=++version;history.push({role:'user',content:text});input.value='';input.placeholder='';document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;
  const user=document.createElement('div');user.className='turn user';user.textContent=text;transcript.append(user);
  const answer=document.createElement('div');answer.className='turn assistant';answer.innerHTML='<span class="speaker">SAM DIGITAL · AI GUIDE</span><div class="researching" role="status"><span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Researching your request</span></div><small class="loading-detail"></small><div class="answer-text" aria-live="polite"></div>';transcript.append(answer);
  const output=answer.querySelector('.answer-text'),pending=answer.querySelector('.researching'),hint=answer.querySelector('.loading-detail');hint.textContent=detail();current={id,answer,pending,hint,output,text:'',cancelled:false,streaming:false};const task=current;
