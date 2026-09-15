@@ -16,21 +16,19 @@ export function interpret(raw,history,previous={}){
  const latestCorrection=history.findLastIndex(m=>m.role==='user'&&/^(actually|correction|I meant|to clarify)\b/i.test(m.content.trim()));
  for(const key of CRITERIA){const old=previous.evidence?.[key];if(!evidence[key]&&old&&old.turn>=latestCorrection&&history[old.turn]?.role==='user'&&history[old.turn].content.includes(old.quote))evidence[key]=old;}
  if(!evidence.starting){const correction=history.findLastIndex(m=>m.role==='user'&&/^(actually|correction|I meant|to clarify)\b/i.test(m.content.trim()));for(let turn=history.length-1;turn>=Math.max(0,correction);turn--){if(history[turn].role!=='user')continue;const quote=(history[turn].content.match(/[^.!?\n]+[.!?]?/g)||[]).map(s=>s.trim()).find(s=>/^(today|currently|right now|at the moment|this is (?:a )?new|(?:I|we) currently)\b/i.test(s)&&!s.endsWith('?'));if(quote){evidence.starting={quote,turn};break;}}}
- let reply=data.reply.split(READY).join('').trim();let asked=false;reply=reply.replace(/[^.!?\n]*\?/g,q=>{if(asked)return '';asked=true;return q;});let question=reply.match(/[^.!?\n]*\?/g)?.join(' ').trim()||'';
+ let reply=data.reply.trim();let question=reply.match(/[^.!?\n]*\?/g)?.join(' ').trim()||'';
  const last=history.filter(m=>m.role==='user').at(-1)?.content||'';
  const prior=history.filter(m=>m.role==='user').slice(0,-1);
  const repeatedInput=prior.some(m=>norm(m.content)===norm(last));
  const uncertain=data.uncertain||/\b(?:price|pricing|cost|quote|estimate|guarantee|delivery date|completion date)\b/i.test(last)||/\b(?:not sure|cannot confirm|can't confirm|don.t know|don.t have that information)\b/i.test(reply);
  const unsafe=/\b(?:upload|attach|send me).{0,45}\b(?:file|document|screenshot|password|credential)|\b(?:fixed (?:quote|price)|guarantee.{0,30}(?:deliver|ready))\b|[$£€]\s*\d/i.test(reply);
- const technicalQuestion=/\b(?:API|(?:tech|technology|software) stack|framework|database|hosting|integration|programming|email.*tools|spreadsheet.*tools)\b/i.test(question);
  const contextualReady=!!evidence.outcome&&/\b(enough (?:information|context)|clear (?:picture|enough)|ready to send|useful (?:first |human )?conversation)\b/i.test(reply)&&/\b(human|email|Send Request)\b/i.test(reply);
- let reason=uncertain||unsafe||(technicalQuestion&&!CRITERIA.every(k=>evidence[k]))||!reply?'uncertain':repeatedInput||sameQuestion(question,previous.question||'')||!!question&&history.some(m=>m.role==='assistant'&&sameQuestion(question,m.content.match(/[^.!?\n]*\?/g)?.join(' ')||''))||!!previous.reply&&norm(reply)===norm(previous.reply)?'stalled':(CRITERIA.every(k=>evidence[k])||contextualReady)?'ready':'';
+ let reason=uncertain||unsafe||!reply?'uncertain':repeatedInput||sameQuestion(question,previous.question||'')||!!question&&history.some(m=>m.role==='assistant'&&sameQuestion(question,m.content.match(/[^.!?\n]*\?/g)?.join(' ')||''))||!!previous.reply&&norm(reply)===norm(previous.reply)?'stalled':(CRITERIA.every(k=>evidence[k])||contextualReady)?'ready':'';
  if(reason==='uncertain')reply=EMAIL;
  else if(reason==='stalled')reply=STALLED;
  else if(reason==='ready'){
-  // Keep useful advice but never append another discovery question after offering handoff.
-  reply=reply.replace(/[^.!?\n]*\?/g,'').trim();
-  if(previous.reason!=='ready'||!reply)reply=reply?reply+'\n\n'+READY:READY;
+  // Readiness offers an optional handoff; it no longer edits the conversation.
+  if(previous.reason!=='ready'&&!/Send Request|email|human/i.test(reply))reply+='\n\n'+READY;
  }
  return {reply,evidence,reason,question:reason?'':question};
 }

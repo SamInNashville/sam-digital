@@ -23,14 +23,6 @@ function recentMessages(){
  const source=[...new Set([...pinned,...record.history.slice(-8)])];
  return source.map(m=>({role:m.role,content:m.content.slice(0,1000)})).slice(-8);
 }
-function conversationHint(){
- const users=record.history.filter(m=>m.role==='user').map(m=>m.content).join(' ');
- const mobileProject=/\bmobile (?:app|game)|(?:app|game).{0,35}(?:mobile|phones)|(?:iphone|android) (?:app|game)\b/i.test(users);
- if(mobileProject&&!/\b(iphone|android|both)\b/i.test(users))return 'Notice the social appeal of their idea in one friendly sentence. Ask: Are you thinking iPhone, Android, or both?';
- if(mobileProject&&/\b(both|iphone|android)\b/i.test(users)&&!/\b(new|scratch|existing|started|begun)\b/i.test(users))return 'The visitor answered the device question. Briefly acknowledge how friends with different phones can join in. Ask this next: Is this a new project, or have you already started it?';
- if(mobileProject&&/^(new|from scratch)[.!]?$/i.test(record.history.filter(m=>m.role==='user').at(-1)?.content.trim()||'')&&/\b(both|iphone|android)\b/i.test(users))return 'They are starting fresh. Their game idea and phone choice are already known. Reflect the appeal of bringing people together for their game. Offer Send Request to discuss it with a human, or invite them to keep sharing here. Do not ask another discovery question in this reply.';
- return 'Accept short answers in context. Reflect the appeal of their actual idea. Useful basics can be enough for an optional email invitation; no need to demand features or ask another question.';
-}
 async function submit(text){
  if(!text.trim()||current)return;const id=++version;input.value='';input.placeholder='';add('user',text);document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;render('user',text);
  const box=render('assistant',''),output=box.querySelector('.answer-text');const pending=document.createElement('div');pending.className='researching';pending.setAttribute('role','status');pending.textContent='Researching your request';const hint=document.createElement('small');hint.className='loading-detail';hint.textContent=detail();box.insertBefore(pending,output);box.insertBefore(hint,output);
@@ -41,7 +33,7 @@ async function submit(text){
   else if(wantsPerson(text))record.assessment={reply:PERSON,reason:'person',evidence:record.assessment.evidence||{},question:''};
   else{
    await assistant.start();if(task.id!==version)return;
-   await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;},'Previously evidenced story areas: '+Object.keys(record.assessment.evidence||{}).join(', ')+'. These are optional clues, not requirements. '+conversationHint());
+   await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;});
    if(task.id!==version)return;
    record.assessment=interpret(task.raw,record.history,record.assessment);
   }

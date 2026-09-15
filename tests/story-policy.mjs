@@ -11,16 +11,16 @@ assert.equal(interpret(raw('That helps.',Object.fromEntries(Object.keys(full).ma
 assert.equal(interpret(raw('That helps.',Object.fromEntries(Object.keys(full).map(k=>[k,'Where are you based?']))),[{role:'user',content:'Where are you based?'}]).reason,'');
 assert.equal(interpret('malformed',h).reply,EMAIL);
 assert.equal(interpret(raw('I do not know.',empty,true),h).reply,EMAIL);
-assert.equal(interpret(raw('Which API platform do you use?',empty),h).reply,EMAIL);
+assert.equal(interpret(raw('Which API platform do you use?',empty),h).reply,'Which API platform do you use?');
 assert.equal(interpret(raw('That helps. Which platform do you use?',full),h).reason,'ready');
-assert(!interpret(raw('That helps. Which platform do you use?',full),h).reply.includes('platform'));
+assert(interpret(raw('That helps. Which platform do you use?',full),h).reply.includes('platform'));
 assert.equal(interpret(raw('Who will use this?',empty),h,{question:'Who will use this?'}).reply,STALLED);
 assert.equal(interpret(raw('Another question?',empty),[...h,...h]).reply,STALLED);
 assert.equal(wantsPerson(story+' I want them to send a booking request.'),false);
 assert.equal(wantsPerson('Please send this request'),true);
 assert.equal(wantsPerson('I want to talk to a human'),true);
 assert.equal(interpret(raw('That helps.',full),[...h,{role:'user',content:'Actually adults book their own lessons.'}]).reason,'');
-assert(!interpret(raw('Extra detail noted. '+READY,full),h,{reason:'ready'}).reply.includes(READY));
+assert.equal(interpret(raw('Extra detail noted. '+READY,full),h,{reason:'ready'}).reply,'Extra detail noted. '+READY);
 for(let i=0;i<12;i++)assert.equal(interpret(raw('Useful answer '+i,empty),Array.from({length:i+1},(_,j)=>({role:'user',content:'Unique useful detail '+j}))).reason,'');
 const long='Full detail '.repeat(1000);const body=storyText({id:'test-story',notes:'my correction',archive:[{role:'user',at:'fixture',content:long},{role:'assistant',at:'fixture',content:'Full guide question?'}]},'Unsent note');for(const s of [long,'Full guide question?','Unsent note','my correction','test-story'])assert(body.includes(s));
 console.log('PASS readiness, provenance, unknown, correction, uncertainty, repetition, productive long interviews, complete record');
@@ -31,6 +31,8 @@ console.log('PASS readiness, provenance, unknown, correction, uncertainty, repet
  const first=interpret(JSON.stringify({reply:'Are you thinking iPhone, Android, or both?',uncertain:false,evidence:{outcome:history[0].content,people:history[0].content,starting:'',better:history[0].content}}),history);
  history.push({role:'assistant',content:first.reply},{role:'user',content:'both'},{role:'assistant',content:'Are you starting fresh, or have you already begun?'},{role:'user',content:'new'});
  const next=interpret(JSON.stringify({reply:'A fresh start! What gameplay do you envision?',uncertain:false,evidence:{outcome:history[0].content,people:'both',starting:'new',better:''}}),history,first);
- assert.equal(next.reason,'ready');assert.equal(next.evidence.starting.quote,'new');assert.equal(next.evidence.people.quote,history[0].content);assert.ok(!next.reply.includes('What gameplay'));
+ assert.equal(next.reason,'ready');assert.equal(next.evidence.starting.quote,'new');assert.equal(next.evidence.people.quote,history[0].content);assert.ok(next.reply.includes('What gameplay'));
  console.log('PASS short new answer and retained original evidence');
 }
+
+const conversational='Sounds fun, right? Would you prefer a website or a mobile app?';assert.equal(interpret(raw(conversational),[{role:'user',content:'I want an online game.'}]).reply,conversational);console.log('PASS conversation retained without question cutting');
