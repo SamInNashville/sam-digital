@@ -12,6 +12,8 @@ assert.equal(interpret(raw('That helps.',Object.fromEntries(Object.keys(full).ma
 assert.equal(interpret('malformed',h).reply,EMAIL);
 assert.equal(interpret(raw('I do not know.',empty,true),h).reply,EMAIL);
 assert.equal(interpret(raw('Which API platform do you use?',empty),h).reply,EMAIL);
+assert.equal(interpret(raw('That helps. Which platform do you use?',full),h).reason,'ready');
+assert(!interpret(raw('That helps. Which platform do you use?',full),h).reply.includes('platform'));
 assert.equal(interpret(raw('Who will use this?',empty),h,{question:'Who will use this?'}).reply,STALLED);
 assert.equal(interpret(raw('Another question?',empty),[...h,...h]).reply,STALLED);
 assert.equal(wantsPerson(story+' I want them to send a booking request.'),false);

@@ -1,20 +1,21 @@
 import {createLocalAssistant} from './local-assistant.js';
+import {starterAnswer} from './starter-answers.js';
 import {interpret,storyText,wantsPerson,EMAIL,PERSON} from './story-policy.js';
 const $=s=>document.querySelector(s),input=$('#prompt'),send=$('#send'),transcript=$('#transcript'),followups=$('#follow-ups');
 const atmosphere=document.createElement('div');atmosphere.id='atmosphere';atmosphere.dataset.state='idle';atmosphere.setAttribute('aria-hidden','true');atmosphere.innerHTML='<canvas aria-hidden="true"></canvas>';document.body.prepend(atmosphere);
 const motion=document.createElement('button');motion.id='motion';motion.type='button';motion.textContent='Pause background';motion.hidden=true;document.body.append(motion);
-const KEY='sam-digital-story-v1';
-let record={id:crypto.randomUUID(),archive:[],history:[],topic:1,notes:'',draft:'',assessment:{}},storageOK=true;
-try{const saved=JSON.parse(sessionStorage.getItem(KEY)||'null');if(saved&&typeof saved.id==='string'&&Array.isArray(saved.archive)&&Array.isArray(saved.history)&&[...saved.archive,...saved.history].every(m=>['user','assistant'].includes(m.role)&&typeof m.content==='string'))record={...record,...saved};}catch{storageOK=false;}
+// A fresh page is a fresh conversation. Remove records left by the previous version.
+try{sessionStorage.removeItem('sam-digital-story-v1');}catch{}
+const record={id:crypto.randomUUID(),archive:[],history:[],topic:1,notes:'',draft:'',assessment:{}};
 let status={phase:'preparing'},current=null,version=0;
-function persist(){record.draft=input.value;try{sessionStorage.setItem(KEY,JSON.stringify(record));}catch{storageOK=false;}$('#storage-status').textContent=storageOK?'Conversation saved in this browser tab. Download a copy to keep it.':'This browser cannot save the conversation. Download a copy before leaving.';}
+function persist(){record.draft=input.value;}
 function add(role,content){const m={role,content,at:new Date().toISOString(),topic:record.topic};record.history.push(m);record.archive.push(m);persist();return m;}
 function render(role,text){const box=document.createElement('div');box.className='turn '+role;if(role==='assistant'){const name=document.createElement('span');name.className='speaker';name.textContent='SAM DIGITAL · AI GUIDE';box.append(name);const answer=document.createElement('div');answer.className='answer-text';answer.textContent=text;box.append(answer);}else box.textContent=text;transcript.append(box);return box;}
-function detail(){return status.phase==='ready'?'Reviewing the details you shared.':'The local model is still loading. Your request is queued on this device.';}
-function state(next){status=next;document.body.dataset.model=next.phase;$('#state-label').textContent=next.phase==='preparing'?'Preparing local AI…':next.phase==='failed'?'Local AI unavailable — you can still send your request.':next.detail;$('#state-label').title=next.detail;$('#retry').hidden=next.phase!=='failed';const p=$('#model-progress');p.hidden=next.phase!=='preparing';if(Number.isFinite(next.progress))p.value=Math.max(0,Math.min(1,next.progress));else p.removeAttribute('value');if(current)current.hint.textContent=detail();}
+function detail(){return status.phase==='ready'?'Reviewing the details you shared.':'Getting ready. Your message is waiting here.';}
+function state(next){status=next;document.body.dataset.model=next.phase;$('#state-label').textContent=next.phase==='preparing'?'Getting ready…':next.phase==='failed'?'The guide is unavailable. You can still send your request.':'Ready when you are.';$('#state-label').removeAttribute('title');$('#retry').hidden=next.phase!=='failed';const p=$('#model-progress');p.hidden=next.phase!=='preparing';if(Number.isFinite(next.progress))p.value=Math.max(0,Math.min(1,next.progress));else p.removeAttribute('value');if(current)current.hint.textContent=detail();}
 const assistant=createLocalAssistant(state);assistant.start().catch(()=>{});
 import('./atmosphere.js').then(m=>m.startAtmosphere(atmosphere,motion)).catch(()=>{atmosphere.dataset.renderer='fallback';});
-function buttonState(busy){send.type=busy?'button':'submit';send.dataset.stop=String(busy);send.setAttribute('aria-label',busy?'Stop response':'Send message');send.textContent=busy?'■':'↑';$('#fresh').disabled=busy;$('#forget').disabled=busy;document.querySelectorAll('[data-prompt]').forEach(b=>b.disabled=busy);}
+function buttonState(busy){send.type=busy?'button':'submit';send.dataset.stop=String(busy);send.setAttribute('aria-label',busy?'Stop response':'Send message');send.textContent=busy?'■':'↑';$('#fresh').disabled=busy;document.querySelectorAll('[data-prompt]').forEach(b=>b.disabled=busy);}
 function suggested(){followups.replaceChildren();followups.hidden=false;const review=document.createElement('button');review.type='button';review.textContent='Send Request ↗';review.className='primary';review.addEventListener('click',openBrief);followups.append(review);const more=document.createElement('button');more.type='button';more.textContent='Add more detail';more.addEventListener('click',()=>{input.focus();input.scrollIntoView({block:'center',behavior:'smooth'});});followups.append(more);document.body.dataset.handoff=record.assessment.reason||'exploring';}
 function recentMessages(){
  // Only inference context is bounded; the original story never is.
@@ -27,7 +28,9 @@ async function submit(text){
  const box=render('assistant',''),output=box.querySelector('.answer-text');const pending=document.createElement('div');pending.className='researching';pending.setAttribute('role','status');pending.textContent='Researching your request';const hint=document.createElement('small');hint.className='loading-detail';hint.textContent=detail();box.insertBefore(pending,output);box.insertBefore(hint,output);
  const task={id,output,pending,hint,raw:'',cancelled:false};current=task;atmosphere.dataset.state='researching';buttonState(true);box.scrollIntoView({block:'nearest',behavior:'instant'});
  try{
-  if(wantsPerson(text))record.assessment={reply:PERSON,reason:'person',evidence:record.assessment.evidence||{},question:''};
+  const approved=starterAnswer(text);
+  if(approved)record.assessment={reply:approved,reason:'',evidence:record.assessment.evidence||{},question:approved.match(/[^.!?\n]*\?/g)?.join(' ').trim()||''};
+  else if(wantsPerson(text))record.assessment={reply:PERSON,reason:'person',evidence:record.assessment.evidence||{},question:''};
   else{
    await assistant.start();if(task.id!==version)return;
    await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;},'Previously evidenced story areas: '+Object.keys(record.assessment.evidence||{}).join(', ')+'. Missing areas are only conversational hints, not a checklist. Answer the latest visitor first; ask about one genuinely missing detail only if useful.');
@@ -46,7 +49,6 @@ send.addEventListener('click',()=>{if(!current)return;const task=current;task.ca
 document.addEventListener('click',e=>{const b=e.target.closest('[data-prompt]');if(b&&!b.disabled){e.preventDefault();submit(b.dataset.prompt);}});
 $('#retry').addEventListener('click',()=>{if(!current)assistant.retry().catch(()=>{});});
 $('#fresh').addEventListener('click',()=>{if(current)return;if(input.value.trim())add('user',input.value);input.value='';record.history=[];record.assessment={};record.topic++;transcript.replaceChildren();followups.hidden=true;document.body.classList.remove('has-conversation');$('#fresh').hidden=true;atmosphere.dataset.state='idle';assistant.reset().catch(()=>{});persist();input.focus();});
-$('#forget').addEventListener('click',()=>{if(current||!confirm('Clear this tab’s conversation and saved notes? Download a copy first if you want to keep them.'))return;sessionStorage.removeItem(KEY);location.reload();});
 function emailBody(){return storyText(record,input.value);}
 function updateEmail(){const body=emailBody();for(const a of document.querySelectorAll('a[href^="mailto:"]'))a.href='mailto:sam-in-nashville@pm.me?subject='+encodeURIComponent('Project / quote request — '+record.id)+'&body='+encodeURIComponent(body);const preview=$('#story-record');if(preview)preview.textContent=body;$('#email-warning').textContent=body.length>1800?'Long conversation: some email apps may shorten drafts. Copy the full request or download it and paste it into your email. Check before sending.':'Opening your email app does not send the request.';return body;}
 function openBrief(){record.notes=$('#brief').value||record.notes;$('#brief').value=record.notes;updateEmail();$('#copy-status').textContent='';$('#brief-dialog').showModal();}

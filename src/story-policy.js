@@ -19,7 +19,7 @@ export function interpret(raw,history,previous={}){
  const uncertain=data.uncertain||/\b(?:price|pricing|cost|quote|estimate|guarantee|delivery date|completion date)\b/i.test(last)||/\b(?:not sure|cannot confirm|can't confirm|don.t know|don.t have that information)\b/i.test(reply);
  const unsafe=/\b(?:upload|attach|send me).{0,45}\b(?:file|document|screenshot|password|credential)|\b(?:fixed (?:quote|price)|guarantee.{0,30}(?:deliver|ready))\b|[$£€]\s*\d/i.test(reply);
  const technicalQuestion=/\b(?:API|stack|framework|database|hosting|integration|programming|platform|email.*tools|spreadsheet.*tools)\b/i.test(question);
- let reason=uncertain||unsafe||technicalQuestion||!reply?'uncertain':repeatedInput||sameQuestion(question,previous.question||'')||!!question&&history.some(m=>m.role==='assistant'&&sameQuestion(question,m.content.match(/[^.!?\n]*\?/g)?.join(' ')||''))||!!previous.reply&&norm(reply)===norm(previous.reply)?'stalled':CRITERIA.every(k=>evidence[k])?'ready':'';
+ let reason=uncertain||unsafe||(technicalQuestion&&!CRITERIA.every(k=>evidence[k]))||!reply?'uncertain':repeatedInput||sameQuestion(question,previous.question||'')||!!question&&history.some(m=>m.role==='assistant'&&sameQuestion(question,m.content.match(/[^.!?\n]*\?/g)?.join(' ')||''))||!!previous.reply&&norm(reply)===norm(previous.reply)?'stalled':CRITERIA.every(k=>evidence[k])?'ready':'';
  if(reason==='uncertain')reply=EMAIL;
  else if(reason==='stalled')reply=STALLED;
  else if(reason==='ready'){
