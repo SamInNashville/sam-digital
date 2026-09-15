@@ -1,53 +1,58 @@
 import {createLocalAssistant} from './local-assistant.js';
-const $=s=>document.querySelector(s), input=$('#prompt'), send=$('#send'), transcript=$('#transcript');
+import {interpret,storyText,wantsPerson,EMAIL,PERSON} from './story-policy.js';
+const $=s=>document.querySelector(s),input=$('#prompt'),send=$('#send'),transcript=$('#transcript'),followups=$('#follow-ups');
 const atmosphere=document.createElement('div');atmosphere.id='atmosphere';atmosphere.dataset.state='idle';atmosphere.setAttribute('aria-hidden','true');atmosphere.innerHTML='<canvas aria-hidden="true"></canvas>';document.body.prepend(atmosphere);
 const motion=document.createElement('button');motion.id='motion';motion.type='button';motion.textContent='Pause background';motion.hidden=true;document.body.append(motion);
-let status={phase:'preparing'},current=null,version=0,history=[];
-const followups=$('#follow-ups');
-function detail(){return status.phase==='ready'?'Reviewing the details you shared.':status.phase==='failed'?'Local AI could not start. You can still email us.':'The local model is still loading. Your request is queued on this device.';}
-function state(next){status=next;document.body.dataset.model=next.phase;$('#state-label').textContent=next.phase==='preparing'?'Preparing local AI…':next.phase==='failed'?'Local AI unavailable — your enquiry can still be emailed.':next.detail;$('#state-label').title=next.detail;$('#retry').hidden=next.phase!=='failed';const progress=$('#model-progress');progress.hidden=next.phase!=='preparing';if(Number.isFinite(next.progress))progress.value=Math.max(0,Math.min(1,next.progress));else progress.removeAttribute('value');if(current?.hint)current.hint.textContent=detail();}
-const assistant=createLocalAssistant(state);
-// Model startup is not chained to the intro, a user click, or the background renderer.
-assistant.start().catch(()=>{});
+const KEY='sam-digital-story-v1';
+let record={id:crypto.randomUUID(),archive:[],history:[],topic:1,notes:'',draft:'',assessment:{}},storageOK=true;
+try{const saved=JSON.parse(sessionStorage.getItem(KEY)||'null');if(saved&&typeof saved.id==='string'&&Array.isArray(saved.archive)&&Array.isArray(saved.history)&&[...saved.archive,...saved.history].every(m=>['user','assistant'].includes(m.role)&&typeof m.content==='string'))record={...record,...saved};}catch{storageOK=false;}
+let status={phase:'preparing'},current=null,version=0;
+function persist(){record.draft=input.value;try{sessionStorage.setItem(KEY,JSON.stringify(record));}catch{storageOK=false;}$('#storage-status').textContent=storageOK?'Conversation saved in this browser tab. Download a copy to keep it.':'This browser cannot save the conversation. Download a copy before leaving.';}
+function add(role,content){const m={role,content,at:new Date().toISOString(),topic:record.topic};record.history.push(m);record.archive.push(m);persist();return m;}
+function render(role,text){const box=document.createElement('div');box.className='turn '+role;if(role==='assistant'){const name=document.createElement('span');name.className='speaker';name.textContent='SAM DIGITAL · AI GUIDE';box.append(name);const answer=document.createElement('div');answer.className='answer-text';answer.textContent=text;box.append(answer);}else box.textContent=text;transcript.append(box);return box;}
+function detail(){return status.phase==='ready'?'Reviewing the details you shared.':'The local model is still loading. Your request is queued on this device.';}
+function state(next){status=next;document.body.dataset.model=next.phase;$('#state-label').textContent=next.phase==='preparing'?'Preparing local AI…':next.phase==='failed'?'Local AI unavailable — you can still send your request.':next.detail;$('#state-label').title=next.detail;$('#retry').hidden=next.phase!=='failed';const p=$('#model-progress');p.hidden=next.phase!=='preparing';if(Number.isFinite(next.progress))p.value=Math.max(0,Math.min(1,next.progress));else p.removeAttribute('value');if(current)current.hint.textContent=detail();}
+const assistant=createLocalAssistant(state);assistant.start().catch(()=>{});
 import('./atmosphere.js').then(m=>m.startAtmosphere(atmosphere,motion)).catch(()=>{atmosphere.dataset.renderer='fallback';});
-function buttonState(busy){send.type=busy?'button':'submit';send.dataset.stop=String(busy);send.setAttribute('aria-label',busy?'Stop response':'Send request');send.textContent=busy?'■':'↑';$('#fresh').disabled=busy;document.querySelectorAll('[data-prompt]').forEach(b=>b.disabled=busy);}
-function suggested(){
- followups.replaceChildren();followups.hidden=false;
- const latest=history.filter(m=>m.role==='user').slice(-2).map(m=>m.content).join(' ').toLowerCase();
- let options=[['Software development','I need help with a software project.'],['Automation','I need help automating a task.'],['Research','I need a research or analysis project.'],['Documentation','I need technical writing or documentation.']];
- if(/automat|workflow|repetitive/.test(latest))options=[['Spreadsheets & reports','My repetitive task involves spreadsheets and reports.'],['Connecting tools','I need to move information between tools.'],['Files & documents','My repetitive task involves files and documents.']];
- else if(/app|software|website/.test(latest))options=[['A new application','I want to build a new application.'],['Improve existing software','I need to improve software I already use.'],['A script or integration','I need a script or an integration between systems.']];
- if(history.filter(m=>m.role==='user').length>2)options=[['What details should I send?','What details should I include in my job enquiry?'],['Help me define the scope','Help me narrow this down to a clear first deliverable.']];
- const question=history.filter(m=>m.role==='assistant').at(-1)?.content.toLowerCase()||'';
- if(/which.*(?:email|spreadsheet).*tools|email and spreadsheet tools/.test(question))options=[['Gmail + Google Sheets','I use Gmail and Google Sheets.'],['Outlook + Excel','I use Outlook and Excel.'],['Another combination','I use a different combination of tools. What do you need to know about them?']];
- else if(/how (many|often)|what.*volume/.test(question))options=[['A few each day','There are only a few each day.'],['Dozens each day','There are dozens each day.'],['Hundreds each day','There are hundreds each day.']];
- else if(/what.*(?:deadline|timeline)|when.*(?:need|ready)/.test(question))options=[['As soon as practical','I would like it as soon as practical, but need your assessment first.'],['Within a month','Ideally within a month.'],['Just exploring','I am exploring options and have no firm deadline yet.']];
- for(const [label,prompt] of options){const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.prompt=prompt;followups.append(b);}
- const review=document.createElement('button');review.type='button';review.textContent='Review my enquiry ↗';review.addEventListener('click',openBrief);followups.append(review);
+function buttonState(busy){send.type=busy?'button':'submit';send.dataset.stop=String(busy);send.setAttribute('aria-label',busy?'Stop response':'Send message');send.textContent=busy?'■':'↑';$('#fresh').disabled=busy;$('#forget').disabled=busy;document.querySelectorAll('[data-prompt]').forEach(b=>b.disabled=busy);}
+function suggested(){followups.replaceChildren();followups.hidden=false;const review=document.createElement('button');review.type='button';review.textContent='Send Request ↗';review.className='primary';review.addEventListener('click',openBrief);followups.append(review);const more=document.createElement('button');more.type='button';more.textContent='Add more detail';more.addEventListener('click',()=>{input.focus();input.scrollIntoView({block:'center',behavior:'smooth'});});followups.append(more);document.body.dataset.handoff=record.assessment.reason||'exploring';}
+function recentMessages(){
+ // Only inference context is bounded; the original story never is.
+ const pinned=Object.values(record.assessment.evidence||{}).map(e=>record.history[e.turn]).filter(Boolean);
+ const source=[...new Set([...pinned,...record.history.slice(-8)])];
+ return source.map(m=>({role:m.role,content:m.content.slice(0,1000)})).slice(-8);
 }
-function recentMessages(){let messages=history.slice(-8);while(messages.length>2&&messages.reduce((n,m)=>n+m.content.length,0)>7000)messages=messages.slice(2);if(messages[0]?.role!=='user')messages=messages.slice(1);return messages;}
 async function submit(text){
- text=text.trim().slice(0,1200);if(!text||current)return;
- const id=++version;history.push({role:'user',content:text});input.value='';input.placeholder='';document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;
- const user=document.createElement('div');user.className='turn user';user.textContent=text;transcript.append(user);
- const answer=document.createElement('div');answer.className='turn assistant';answer.innerHTML='<span class="speaker">SAM DIGITAL · AI GUIDE</span><div class="researching" role="status"><span class="thinking-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Researching your request</span></div><small class="loading-detail"></small><div class="answer-text" aria-live="polite"></div>';transcript.append(answer);
- const output=answer.querySelector('.answer-text'),pending=answer.querySelector('.researching'),hint=answer.querySelector('.loading-detail');hint.textContent=detail();current={id,answer,pending,hint,output,text:'',cancelled:false,streaming:false};const task=current;
- atmosphere.dataset.state='researching';buttonState(true);answer.scrollIntoView({block:'nearest',behavior:'instant'});
+ if(!text.trim()||current)return;const id=++version;input.value='';input.placeholder='';add('user',text);document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;render('user',text);
+ const box=render('assistant',''),output=box.querySelector('.answer-text');const pending=document.createElement('div');pending.className='researching';pending.setAttribute('role','status');pending.textContent='Researching your request';const hint=document.createElement('small');hint.className='loading-detail';hint.textContent=detail();box.insertBefore(pending,output);box.insertBefore(hint,output);
+ const task={id,output,pending,hint,raw:'',cancelled:false};current=task;atmosphere.dataset.state='researching';buttonState(true);box.scrollIntoView({block:'nearest',behavior:'instant'});
  try{
-  await assistant.start();if(task.id!==version)return;task.streaming=true;
-  await assistant.reply(recentMessages(),delta=>{if(task.cancelled||task.id!==version)return;pending.hidden=true;hint.hidden=true;task.text+=delta;output.textContent=task.text;});
-  if(!task.cancelled&&task.text)history.push({role:'assistant',content:task.text});
-  if(!task.cancelled&&!task.text)throw Error('The local model returned no text. Please try again.');
- }catch(error){if(!task.cancelled&&task.id===version){pending.hidden=true;hint.hidden=true;output.textContent=task.text||'I couldn’t prepare a reply on this device. You can still review your enquiry and email the builder directly.';output.classList.add('error');output.title=error.message;}}
- finally{if(task.id===version){pending.hidden=true;hint.hidden=true;if(task.cancelled){output.textContent=task.text?task.text+'\n\nResponse stopped.':'Response stopped. Your request is still included in your enquiry.';}current=null;atmosphere.dataset.state='engaged';buttonState(false);suggested();}}
+  if(wantsPerson(text))record.assessment={reply:PERSON,reason:'person',evidence:record.assessment.evidence||{},question:''};
+  else{
+   await assistant.start();if(task.id!==version)return;
+   await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;},'Previously evidenced story areas: '+Object.keys(record.assessment.evidence||{}).join(', ')+'. Missing areas are only conversational hints, not a checklist. Answer the latest visitor first; ask about one genuinely missing detail only if useful.');
+   if(task.id!==version)return;
+   record.assessment=interpret(task.raw,record.history,record.assessment);
+  }
+  if(task.id!==version)return;
+  output.textContent=record.assessment.reply;add('assistant',output.textContent);
+ }catch(error){if(task.id===version){record.assessment={reply:EMAIL,reason:'uncertain',evidence:{},question:''};output.textContent=EMAIL;add('assistant',EMAIL);output.title=error.message;}}
+ finally{if(task.id===version){pending.hidden=true;hint.hidden=true;current=null;atmosphere.dataset.state='engaged';buttonState(false);suggested();persist();}}
 }
-$('#composer').addEventListener('submit',event=>{event.preventDefault();submit(input.value);});
-input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();submit(input.value);}});
-send.addEventListener('click',()=>{if(!current)return;current.cancelled=true;assistant.stop();if(!current.streaming){version++;current.pending.hidden=true;current.hint.hidden=true;current.output.textContent='Response stopped. Your request is still included in your enquiry.';current=null;atmosphere.dataset.state='engaged';buttonState(false);suggested();}});
-document.addEventListener('click',event=>{const b=event.target.closest('[data-prompt]');if(b&&!b.disabled)submit(b.dataset.prompt);});
+$('#composer').addEventListener('submit',e=>{e.preventDefault();submit(input.value);});
+input.addEventListener('input',()=>{persist();updateEmail();});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();submit(input.value);}});
+send.addEventListener('click',()=>{if(!current)return;const task=current;task.cancelled=true;version++;assistant.stop();task.pending.hidden=true;task.hint.hidden=true;task.output.textContent='Response stopped. Your story is still here. You can add more detail or send it to a human.';add('assistant',task.output.textContent);current=null;atmosphere.dataset.state='engaged';buttonState(false);suggested();});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-prompt]');if(b&&!b.disabled){e.preventDefault();submit(b.dataset.prompt);}});
 $('#retry').addEventListener('click',()=>{if(!current)assistant.retry().catch(()=>{});});
-$('#fresh').addEventListener('click',()=>{if(current)return;history=[];transcript.replaceChildren();followups.hidden=true;document.body.classList.remove('has-conversation');$('#fresh').hidden=true;atmosphere.dataset.state='idle';assistant.reset().catch(()=>{});input.focus();});
-function updateEmail(){const body=$('#brief').value;$('#email').href='mailto:sam-in-nashville@pm.me?subject='+encodeURIComponent('Project enquiry — Sam Digital')+'&body='+encodeURIComponent(body);}
-function openBrief(){const asks=history.filter(m=>m.role==='user').map(m=>m.content);if(input.value.trim())asks.push(input.value.trim());$('#brief').value='Hi Sam Digital,\n\n'+(asks.length?asks.join('\n\n'):'I’d like to discuss a project.\n\nWhat I want to achieve:\n\nWhat I currently use:\n\nTiming or constraints:')+'\n\nPlease let me know the next step.\n';updateEmail();$('#copy-status').textContent='';$('#brief-dialog').showModal();}
-$('#review').addEventListener('click',openBrief);$('#brief').addEventListener('input',updateEmail);$('#copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#brief').value);$('#copy-status').textContent='Enquiry copied.';}catch{$('#copy-status').textContent='Select and copy the enquiry text above.';}});
-addEventListener('pagehide',()=>assistant.dispose());
+$('#fresh').addEventListener('click',()=>{if(current)return;if(input.value.trim())add('user',input.value);input.value='';record.history=[];record.assessment={};record.topic++;transcript.replaceChildren();followups.hidden=true;document.body.classList.remove('has-conversation');$('#fresh').hidden=true;atmosphere.dataset.state='idle';assistant.reset().catch(()=>{});persist();input.focus();});
+$('#forget').addEventListener('click',()=>{if(current||!confirm('Clear this tab’s conversation and saved notes? Download a copy first if you want to keep them.'))return;sessionStorage.removeItem(KEY);location.reload();});
+function emailBody(){return storyText(record,input.value);}
+function updateEmail(){const body=emailBody();for(const a of document.querySelectorAll('a[href^="mailto:"]'))a.href='mailto:sam-in-nashville@pm.me?subject='+encodeURIComponent('Project / quote request — '+record.id)+'&body='+encodeURIComponent(body);const preview=$('#story-record');if(preview)preview.textContent=body;$('#email-warning').textContent=body.length>1800?'Long conversation: some email apps may shorten drafts. Copy the full request or download it and paste it into your email. Check before sending.':'Opening your email app does not send the request.';return body;}
+function openBrief(){record.notes=$('#brief').value||record.notes;$('#brief').value=record.notes;updateEmail();$('#copy-status').textContent='';$('#brief-dialog').showModal();}
+$('#review').addEventListener('click',openBrief);$('#brief').addEventListener('input',()=>{record.notes=$('#brief').value;persist();updateEmail();});
+for(const a of document.querySelectorAll('a[href^="mailto:"]'))a.addEventListener('click',e=>{if(a.id!=='email'){e.preventDefault();openBrief();}else updateEmail();});
+$('#copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(updateEmail());$('#copy-status').textContent='Full request copied.';}catch{$('#copy-status').textContent='Copy the complete conversation below, or download it.';}});
+$('#download-story').addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([updateEmail()],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='sam-digital-story-'+record.id+'.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+for(const m of record.history)render(m.role,m.content);input.value=record.draft||'';$('#brief').value=record.notes||'';if(record.history.length){document.body.classList.add('has-conversation');$('#fresh').hidden=false;suggested();}persist();updateEmail();
+addEventListener('pagehide',()=>{persist();assistant.dispose();});
