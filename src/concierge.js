@@ -23,6 +23,13 @@ function recentMessages(){
  const source=[...new Set([...pinned,...record.history.slice(-8)])];
  return source.map(m=>({role:m.role,content:m.content.slice(0,1000)})).slice(-8);
 }
+function scopeHint(){
+ const users=record.history.filter(m=>m.role==='user').map(m=>m.content).join(' ');
+ const last=record.history.filter(m=>m.role==='user').at(-1)?.content||'';
+ const previous=record.history.filter(m=>m.role==='assistant').at(-1)?.content||'';
+ if(/iPhone|Android/i.test(previous)&&/\b(both|iphone|android)\b/i.test(last)&&!/\b(new project|already started|existing app|brand new|from scratch)\b/i.test(users))return 'The visitor answered the device question. Ask this next: Is this a new project, or have you already started it?';
+ return 'Clarify practical scope only when useful: intended devices and new versus existing work. Do not ask for game rules or unique features just to fill a criterion. Answer the latest visitor first.';
+}
 async function submit(text){
  if(!text.trim()||current)return;const id=++version;input.value='';input.placeholder='';add('user',text);document.body.classList.add('has-conversation');$('#fresh').hidden=false;followups.hidden=true;render('user',text);
  const box=render('assistant',''),output=box.querySelector('.answer-text');const pending=document.createElement('div');pending.className='researching';pending.setAttribute('role','status');pending.textContent='Researching your request';const hint=document.createElement('small');hint.className='loading-detail';hint.textContent=detail();box.insertBefore(pending,output);box.insertBefore(hint,output);
@@ -33,7 +40,7 @@ async function submit(text){
   else if(wantsPerson(text))record.assessment={reply:PERSON,reason:'person',evidence:record.assessment.evidence||{},question:''};
   else{
    await assistant.start();if(task.id!==version)return;
-   await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;},'Previously evidenced story areas: '+Object.keys(record.assessment.evidence||{}).join(', ')+'. Missing areas are only conversational hints, not a checklist. Answer the latest visitor first; ask about one genuinely missing detail only if useful.');
+   await assistant.reply(recentMessages(),delta=>{if(!task.cancelled&&task.id===version)task.raw+=delta;},'Previously evidenced story areas: '+Object.keys(record.assessment.evidence||{}).join(', ')+'. These are optional clues, not requirements. '+scopeHint());
    if(task.id!==version)return;
    record.assessment=interpret(task.raw,record.history,record.assessment);
   }
