@@ -1,7 +1,7 @@
 import {chromium,expect} from '@playwright/test';
 import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.BASE_URL||'http://127.0.0.1:4183/sam-digital/';
-const cases=[['I want to build a domino game where multiple people can play online'],["I'd like to make a mobile game where many people can play dominos"],['I want a website for my bakery. People should be able to see our cakes and ask about an order.']];
+const cases=[['I want to build a game site for dominos'],['I want to build a domino game where multiple people can play online'],["I'd like to make a mobile game where many people can play dominos"],['I want a website for my bakery. People should be able to see our cakes and ask about an order.']];
 await mkdir('proof/natural',{recursive:true});const ctx=await chromium.launchPersistentContext('/Users/sam/sam-digital-ai-test-profile',{channel:'chrome',headless:true});
 await ctx.addInitScript(()=>{window.rawModel=[];const W=window.Worker;window.Worker=class extends W{constructor(...args){super(...args);this.addEventListener('message',({data})=>{if(data.type==='delta')window.rawModel.push(data.text);});}};});
 const page=await ctx.newPage(),results=[];
