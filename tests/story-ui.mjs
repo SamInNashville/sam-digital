@@ -15,9 +15,11 @@ try{
  for(let i=0;i<5;i++)await submit('Useful new detail '+i,payload('Detail '+i+' is helpful.'));
  await expect(page.locator('body')).toHaveAttribute('data-handoff','exploring');pass('Productive interview continues beyond three turns');
  const story='Parents book lessons. Today they call me. I want them to choose a time online.';
- await submit(story,payload('That gives me a useful picture.',{outcome:'I want them to choose a time online.',people:'Parents',starting:'Today they call me.',better:'choose a time online'}));await expect(page.locator('body')).toHaveAttribute('data-handoff','ready');await expect(page.locator('.answer-text').last()).toContainText('gathered enough');pass('Evidence-backed readiness offers optional human handoff');
+ await submit(story,payload('That gives me a useful picture.',{outcome:'I want them to choose a time online.',people:'Parents',starting:'Today they call me.',better:'choose a time online'}));await expect(page.locator('body')).toHaveAttribute('data-handoff','ready');await expect(page.locator('.answer-text').last()).toContainText('Want to take the next step?');pass('Evidence-backed readiness offers optional human handoff');
  await submit('Also siblings sometimes come together.',payload('I have included the sibling detail.'));await expect(page.locator('.turn.user').last()).toContainText('siblings');pass('More detail remains available after readiness');
  await submit('Who knows?',payload('I am unsure.',{},true));await expect(page.locator('body')).toHaveAttribute('data-handoff','uncertain');pass('Uncertainty routes to email');
+ // Start a genuinely new topic: retained readiness must not be mistaken for a repeated visible question.
+ await page.locator('#fresh').click();
  await submit('I need help.',payload('Who will use this?'));await submit('My customers.',payload('Who will use this?'));await expect(page.locator('body')).toHaveAttribute('data-handoff','stalled');pass('Repeated question stops discovery loop');
  const before=await page.evaluate(()=>window.fixtureCount);await submit('I want to talk to a human.');expect(await page.evaluate(()=>window.fixtureCount)).toBe(before);pass('Explicit human request bypasses model');
  const long='Detailed experience & needs 👋 '.repeat(120);await submit(long,payload('I have the full description.'));await page.locator('#prompt').fill('Unsent correction');await page.locator('#prompt').dispatchEvent('input');

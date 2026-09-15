@@ -24,3 +24,13 @@ assert(!interpret(raw('Extra detail noted. '+READY,full),h,{reason:'ready'}).rep
 for(let i=0;i<12;i++)assert.equal(interpret(raw('Useful answer '+i,empty),Array.from({length:i+1},(_,j)=>({role:'user',content:'Unique useful detail '+j}))).reason,'');
 const long='Full detail '.repeat(1000);const body=storyText({id:'test-story',notes:'my correction',archive:[{role:'user',at:'fixture',content:long},{role:'assistant',at:'fixture',content:'Full guide question?'}]},'Unsent note');for(const s of [long,'Full guide question?','Unsent note','my correction','test-story'])assert(body.includes(s));
 console.log('PASS readiness, provenance, unknown, correction, uncertainty, repetition, productive long interviews, complete record');
+
+// Short contextual answers add evidence without erasing previously verified details.
+{
+ const history=[{role:'user',content:"I'd like to make a mobile game where many people can play dominos"}];
+ const first=interpret(JSON.stringify({reply:'Are you thinking iPhone, Android, or both?',uncertain:false,evidence:{outcome:history[0].content,people:history[0].content,starting:'',better:history[0].content}}),history);
+ history.push({role:'assistant',content:first.reply},{role:'user',content:'both'},{role:'assistant',content:'Are you starting fresh, or have you already begun?'},{role:'user',content:'new'});
+ const next=interpret(JSON.stringify({reply:'A fresh start! What gameplay do you envision?',uncertain:false,evidence:{outcome:history[0].content,people:'both',starting:'new',better:''}}),history,first);
+ assert.equal(next.reason,'ready');assert.equal(next.evidence.starting.quote,'new');assert.equal(next.evidence.people.quote,history[0].content);assert.ok(!next.reply.includes('What gameplay'));
+ console.log('PASS short new answer and retained original evidence');
+}
