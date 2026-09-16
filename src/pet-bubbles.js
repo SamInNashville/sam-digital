@@ -10,7 +10,7 @@ export function createBubble({ x = 0, y = 0, vx = 0, vy = 0, size = 4, life = BU
 
 // Bubble geometry is projected at birth; live pod positions are already in screen space.
 export function createEmittedBubble(e,sample){
-  const scale=clamp(Number(e.scale)||1,.65,1.25),pod=sample%2;
+  const scale=clamp(Number(e.scale)||1,.5,2.8),pod=sample%2;
   return createBubble({x:e.x+(pod?1:-1)*(e.podOffset||20*scale),y:e.y,
     vx:e.vx+(pod?16:-16)*scale,vy:e.vy+(e.moving?THRUST.flight:THRUST.hover)*scale,
     size:(4+(sample%4)*1.3)*scale,life:1.8+(sample%4)*.28});

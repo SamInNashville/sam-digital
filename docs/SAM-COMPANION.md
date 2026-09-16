@@ -76,3 +76,11 @@ The flight wrapper uses local perspective after screen-space translation, so dep
 Jetpack pods follow the projected live character bounds. Newly emitted bubbles scale in diameter and ejection impulse using the wrapper's measured projection scale; measured pod positions are not scaled twice. Existing particles retain their birth size. Population, fade, collision/drag physics and hover thrust at normal depth are unchanged.
 
 `tests/pet-depth.mjs` proves unchanged XY/time, zero-depth endpoints, projected viewport bounds and depth-matched bubble birth properties. `tests/pet-depth-browser.mjs` samples actual CSS matrices and rendered bounds on near/far flights, checks the live emitter scale, captures screenshots, verifies mobile bounds and pause, and confirms exact resting depth. Proofs are in `proof/sam-depth/`. The unchanged SVG, CSS, dialogue, hero, model instructions and conversation policy are checked separately.
+
+## Expressive depth and fly-bys
+
+Patrick explicitly rejected the restrained depth pass and requested zooming, nuisance-like play. Sam keeps his SVG artwork and existing remarks. Normal non-editing flights now reach +400 Z / -560 Z on desktop (approximately 2.67× / 0.53×); phones use +320 / -400 (2× / 0.62×). Larger projected bodies move inward to stay fully visible. This intentionally allows brief decorative overlap, never click interception.
+
+A three-second show-off fly-by returns to its starting perch. It waits for quiet, no queued destination, no editing, the speech reading/hover protection, 18 seconds since speech, 24 seconds since the previous fly-by, and six seconds since the last departure. The last gate gives queued scroll/arrival context a chance to speak rather than being preempted by a stunt. Input focus during flight immediately docks Sam at the input's safe perch; focused editing and tickle dodges do not receive large depth effects. Pause, hide, reduced motion and modal/hidden-page safeguards remain shared.
+
+Verification: pet-depth unit checks; pet-depth-browser checks real desktop scale, spontaneous fly-by and input interruption; pet-depth-mobile samples real phone near/far projected bounds; pet-speech covers reading holds and contextual remarks. Worker fixtures isolate decorative tests and are not claims about genuine model inference.
