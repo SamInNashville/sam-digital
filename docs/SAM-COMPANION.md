@@ -52,3 +52,9 @@ Trips now use 97 time-sampled points on one continuous parabola, with cosine-ram
 Focus/hover destinations wait 650ms; scroll attention waits 850ms. An in-progress trip finishes before the latest pending destination is considered, so rapid activity does not continually cancel/restart animation. Resize/out-of-viewport correction and pause/hide remain immediate safety exceptions. Sub-18px perch adjustments stay put. Mouse dodge is slower and less frequent. Arrival encouragement compares last typing against the original focus event, not delayed departure, to avoid speaking over someone who began typing during the wait.
 
 `tests/pet-lazy.mjs` verifies deferred departure, uninterrupted animation identity across new focus, latest-intent arrival and focus preservation. Planner tests now require parabolic rather than loop choreography; previous loop screenshots are historical.
+
+## Coherent authored remarks (supersedes combinatorial banks)
+
+Patrick approved the smooth movement and speech timing; this pass changes only wording. Cartesian opener/ending combinations are replaced by 32 individually authored complete remarks in each main context, plus the four existing small context categories: 176 total entries. Breadth is no longer inflated by unrelated sentence pairings. Approved first lines, selection/repetition logic, UI triggers, timing, flight, gaze, bubbles and actual assistant conversation are unchanged.
+
+Every remark is reviewed in its own context without assuming access to score, selected palette, or visitor transcript. Dialogue tests enumerate the entire selectable catalog, check context isolation, unique main-bank entries, length and exact first lines. These are structural checks, not proof that a joke is funny; editorial review covers sense and tone. Browser context/speech tests verify the real display remains connected correctly.

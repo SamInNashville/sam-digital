@@ -1,36 +1,201 @@
-// Authored combinations, not model-generated claims. No transcript or network access.
-const variations=(first,openers,endings)=>Object.freeze([first,...openers.flatMap(a=>endings.map(b=>`${a} ${b}`)).filter(s=>s!==first)].slice(0,100));
-export const PHRASES=Object.freeze({
- services:variations("Well, that's pretty vague.",[
-  'A conversation. Then something useful.', 'Apparently, useful is the plan.', 'That is a suspiciously tidy summary.', 'Quite a lot hiding in two sentences.', 'Ah, the website explaining itself.', 'Strong words. Very few of them.', 'They kept the explanation compact.', 'This section is playing it cool.', 'An entire process in one headline.', 'We have reached the grand promise.'
- ],[
-  'I would ask a follow-up.', 'Some specifics would not hurt.', 'Details sold separately. Kidding.', 'Let’s put an actual idea against it.', 'The interesting part is your version.', 'I suspect there is a middle bit.', 'The headline has done its shift.', 'Your question can do the heavy lifting.', 'A little context would help.', 'You are allowed to ask what that means.'
- ]),
- game:variations("I guess that's supposed to impress you.",[
-  'Bricks. A paddle. The classics.', 'Very advanced rectangle negotiations.', 'The bricks have had a quiet day.', 'I brought a jetpack to a paddle game.', 'An important research opportunity.', 'So this is the technical showcase.', 'Those rectangles look confident.', 'A perfectly respectable distraction.', 'The paddle has one job.', 'A tiny arcade. Naturally.'
- ],[
-  'I will try to look impressed.', 'Apparently I am the spectator.', 'You can improve the atmosphere.', 'I would help, but these are decorative hands.', 'Somebody should test their confidence.', 'No need to call it productivity.', 'The bubbles are not part of the scoring.', 'I refuse to wear a referee shirt.', 'Let’s not pretend this is a meeting.', 'At least nobody added a tutorial novel.'
- ]),
- design:variations('Pretty colors. Very persuasive little things.',[
-  'A new palette. Same basic idea.', 'The layout is trying on an outfit.', 'A little visual diplomacy.', 'The colors would like your attention.', 'Design is being very composed.', 'Look at those well-behaved margins.', 'This is the polished corner.', 'A remarkably calm arrangement.', 'The spacing is doing its thing.', 'A tiny wardrobe for a website.'
- ],[
-  'Try making it change its mind.', 'I am resisting the urge to rearrange it.', 'The other buttons have opinions too.', 'That is how they get you.', 'I respect the commitment to looking calm.', 'The bubbles remain off-brand. Probably.', 'A different layout might start an argument.', 'Nothing here has to be your favorite.', 'You can poke it. That is the point.', 'I would have added a jetpack.'
- ]),
- chat:variations('I need to know more!',[
-  'Tell me what you have in mind.', 'You have my attention.', 'An unfinished idea is welcome.', 'Start wherever it makes sense to you.', 'I would like to hear your version.', 'A small detail is a good start.', 'You do not need a polished pitch.', 'We can explore this together.', 'Your question belongs here.', 'There is room for the messy version.'
- ],[
-  'What would you like to make possible?', 'Plain language is perfect.', 'What would make it useful to you?', 'You can take your time.', 'A sentence is enough to begin.', 'What should feel easier?', 'Tell me the part you care about.', 'We can sort out the shape as we go.', 'Start with the problem, if that helps.', 'I am here for the details.'
- ]),
- general:variations('Tiny jetpack. Unreasonable confidence.',[
-  'The bubbles are doing the heavy lifting.', 'A small course correction.', 'Just checking the surroundings.', 'This is my thinking hover.', 'I have located another place to float.', 'The jetpack is making a point.', 'Still here. Still airborne.', 'Curiosity is keeping me busy.', 'A very small dramatic entrance.', 'I am supervising the atmosphere.'
- ],[
-  'Someone has to.', 'Do not tell the layout.', 'I call that initiative.', 'Very professional, obviously.', 'The job description was vague.', 'There was no rule against it.', 'I stand by the bubbles.', 'A little personality never hurt.', 'No clipboard required.', 'I am trying not to make a speech.'
- ]),
- tickle:['Hey! Personal airspace.','Ticklish. Extremely dignified about it.','You almost caught a bubble.','Careful. That is my hovering space.'],
- idle:['An unfinished idea is welcome here.','You can start with the messy version.','What would you like to make possible?','A question is a perfectly good starting point.'],
- thinking:['Working through that here in your browser.','A little thinking time. A few more bubbles.','Keeping the conversation local.','Giving that a moment of attention.'],
- reply:['We can keep exploring from here.','There is room for another question.','You can steer the conversation.','The next detail is up to you.']
-});
+// Complete authored remarks: never splice unrelated sentence fragments.
+// No inference, transcript access, storage, or network.
+export const PHRASES=Object.freeze(Object.fromEntries(Object.entries({
+  "services": [
+    "Well, that's pretty vague.",
+    "A conversation. Then something useful. I suspect there is a middle bit.",
+    "That headline has left plenty of room for follow-up questions.",
+    "An entire process in two sentences. Efficient, if nothing else.",
+    "Apparently, “useful” is the plan. You get to explain what that means to you.",
+    "This is the part where the website introduces itself. I got a jetpack for mine.",
+    "The headline is short. Your explanation doesn't have to be.",
+    "I would ask what “something useful” looks like in your case.",
+    "A conversation is a reasonable place to start. Less paperwork.",
+    "The website has had its say. Your version is probably more interesting.",
+    "They kept the introduction brief. I'm trying to learn from that.",
+    "“Then something useful” skips a few steps. You can ask about those.",
+    "A small website can still leave room for a big question.",
+    "There is no prize for arriving with a perfectly written brief.",
+    "That is a lot of work experience squeezed into one paragraph.",
+    "The human builds things. I hover near the explanation.",
+    "You can ask what Sam Digital could do for your particular problem.",
+    "An awkward everyday task is a perfectly good conversation starter.",
+    "You don't have to translate your idea into website language.",
+    "You can start with what annoys you about the way things work now.",
+    "The introduction is polished. Your question can be messy.",
+    "“Something useful” should mean useful to you. Worth mentioning.",
+    "A specific example would give that broad headline something to work with.",
+    "The site says “conversation.” I intend to hold it to that.",
+    "If you want a longer explanation, the chat is right there.",
+    "You are allowed to ask, “What does that actually mean?”",
+    "A short introduction leaves more room for your questions.",
+    "The human gets the enquiry if you choose to send it. I don't own a phone.",
+    "This is an introduction, not a test of how well you can describe a project.",
+    "No need to sound like a company brochure. We already have one.",
+    "The broad outline is here. The interesting details are yours to add.",
+    "The headline could use an example. Got a problem in mind?"
+  ],
+  "game": [
+    "I guess that's supposed to impress you.",
+    "Bricks. A paddle. The classics.",
+    "I brought a jetpack to a paddle game. Slightly overprepared.",
+    "The paddle has one job. I respect the clarity.",
+    "I would help, but these are decorative hands.",
+    "The bubbles are not part of the scoring. I asked.",
+    "A perfectly respectable distraction from reading a website.",
+    "Tiny arcade. Considerable potential for “one more try.”",
+    "Apparently every serious website needs a way to break things.",
+    "I am available for moral support, not paddle control.",
+    "The ball gets to bounce around. I have to look professional.",
+    "No need to call this productivity. I won't tell.",
+    "A paddle game is a bold place to bring a spectator with opinions.",
+    "I can hover. Catching the ball is your department.",
+    "The rectangles are the opposition. Please spare the rest of the website.",
+    "You can try the game. I can provide unnecessary commentary.",
+    "All that technology, and we're back to hitting a ball with a rectangle.",
+    "This demo is playable. My athletic contribution is not.",
+    "I'm keeping my jetpack out of the playing area. Mostly.",
+    "I refuse to wear a referee shirt.",
+    "If the ball needed a pep talk, I'd be qualified.",
+    "The paddle does the work. The bricks get the dramatic exit.",
+    "A small game is still a game. I understand the temptation.",
+    "I like a demo you can poke instead of just read about.",
+    "No meetings in this arcade. Just a ball with somewhere to be.",
+    "One paddle, one ball, and plenty of opportunity to blame the spectator.",
+    "I have opinions about the game, but no high score to back them up.",
+    "This is the only part of the site where breaking things is encouraged.",
+    "The paddle doesn't need a jetpack. I find that disappointing.",
+    "A few rectangles can cause a surprising amount of determination.",
+    "I am not a bonus target. Let's make that clear.",
+    "The game has a restart button. A considerate feature."
+  ],
+  "design": [
+    "Pretty colors. Very persuasive little things.",
+    "The layout is trying on an outfit.",
+    "The palette buttons are there to be tried. No need to admire them from a distance.",
+    "Same design, different colors. Surprisingly easy to have an opinion about.",
+    "You can change the layout without hurting its feelings.",
+    "Look at those well-behaved margins. I could never.",
+    "A remarkably calm arrangement. I would have added a jetpack.",
+    "The design study has more outfit options than I do.",
+    "The other palette buttons deserve a look too.",
+    "Try a different layout. The words can cope.",
+    "The spacing is deliberate. My hovering is less disciplined.",
+    "This is the polished corner of the site. I'll try not to scuff it.",
+    "You don't have to like every option. That is why there are options.",
+    "A different color can make the same page feel surprisingly different.",
+    "I can judge the colors, but I can't promise to be impartial. I'm mostly green.",
+    "This demo lets you compare the options instead of imagining them.",
+    "The layout controls move things around. I approve of moving things around.",
+    "A little room between things can do a lot of work.",
+    "Those buttons change the design, not your browser settings.",
+    "This is a design study, not somebody's client website.",
+    "The colors are doing their best to make this look effortless.",
+    "The calm layout is making my jetpack look excessive.",
+    "I would try the other palette before declaring a favorite.",
+    "You can switch back if you liked the first version better.",
+    "The page has wardrobe changes. I have bubbles.",
+    "A button you can actually try beats a paragraph explaining how it might work.",
+    "The design is very composed. I am hovering beside it making remarks.",
+    "I like that you can disagree with the color choice and immediately change it.",
+    "The words stay put in meaning, even when the layout changes.",
+    "Good spacing doesn't draw much attention to itself. Unlike me.",
+    "This little demo is an excuse to see what feels better to you.",
+    "I'm resisting the urge to put my face in the logo."
+  ],
+  "chat": [
+    "I need to know more!",
+    "Tell me what you have in mind.",
+    "You have my attention.",
+    "An unfinished idea is welcome.",
+    "Start wherever it makes sense to you.",
+    "I'd like to hear your version.",
+    "A small detail is a good start.",
+    "You don't need a polished pitch.",
+    "We can explore the idea together.",
+    "Your question belongs here.",
+    "There is room for the messy version.",
+    "What would you like to make possible?",
+    "Plain language is perfect.",
+    "What would make this useful to you?",
+    "You can take your time.",
+    "A sentence is enough to begin.",
+    "What should feel easier?",
+    "Tell me the part you care about.",
+    "We can sort out the shape as we go.",
+    "Start with the problem, if that helps.",
+    "I'm here for the details.",
+    "You can describe a frustrating task instead of proposing a solution.",
+    "What would a better day look like for the person using this?",
+    "An everyday example can explain more than a project title.",
+    "You can ask a question before you have a project in mind.",
+    "If there are two ideas in your head, you can tell me about both.",
+    "Tell me what happens now and what you wish happened instead.",
+    "You don't need technical terms to describe what you want.",
+    "It's fine if you haven't figured out the solution yet.",
+    "What's the part you most want to change?",
+    "You can correct yourself as we go. Ideas are allowed to change.",
+    "Who would this help, and what would it help them do?"
+  ],
+  "general": [
+    "Tiny jetpack. Unreasonable confidence.",
+    "The bubbles are doing the heavy lifting.",
+    "Still here. Still airborne.",
+    "I have a jetpack and very little supervision.",
+    "Hovering is my version of standing by.",
+    "The job description did not mention landing.",
+    "I would get a chair, but that would waste the jetpack.",
+    "A little curiosity keeps me moving.",
+    "I'm trying not to turn every visit into a speech.",
+    "The bubbles are part of the equipment. The attitude is included.",
+    "I take my hovering responsibilities very seriously.",
+    "I have yet to find a pocket big enough for a clipboard.",
+    "If looking around counts as work, I'm doing well.",
+    "The antenna adds a certain air of competence.",
+    "I can be patient. The jetpack makes waiting more interesting.",
+    "No landing gear. That may have been an oversight.",
+    "I have a very small face for this many opinions.",
+    "The page is doing its job. I'm providing commentary.",
+    "I'm keeping an eye on the page. Two, technically.",
+    "Being small makes the website feel like a much bigger place.",
+    "I considered a dramatic entrance. Then I got distracted by the bubbles.",
+    "I prefer a gentle approach. It gives me time to look around.",
+    "My feet are mostly for decoration at this point.",
+    "Curiosity is a perfectly good reason to have a jetpack.",
+    "I'm not lost. I'm taking the scenic route across the page.",
+    "Someone gave me a speech bubble. There were always going to be consequences.",
+    "I could stand quietly in a corner, but they gave me a jetpack.",
+    "The website has a guide. The guide has opinions.",
+    "I'm here if you need a nudge toward the conversation.",
+    "A little floating around helps me think. That's my explanation, anyway.",
+    "I'm trying to be helpful without becoming a pop-up.",
+    "Small guide. Plenty of room for questions."
+  ],
+  "tickle": [
+    "Hey! Personal airspace.",
+    "Ticklish. Extremely dignified about it.",
+    "Careful. That is my hovering space.",
+    "A little room for the jetpack, please."
+  ],
+  "idle": [
+    "An unfinished idea is welcome here.",
+    "You can start with the messy version.",
+    "What would you like to make possible?",
+    "A question is a perfectly good starting point."
+  ],
+  "thinking": [
+    "Working through that here in your browser.",
+    "A little thinking time. A few more bubbles.",
+    "The reply is being worked out here in your browser.",
+    "Giving your question some attention."
+  ],
+  "reply": [
+    "We can keep exploring from here.",
+    "There is room for another question.",
+    "You can steer the conversation.",
+    "You can add a detail or ask something else."
+  ]
+}).map(([context,lines])=>[context,Object.freeze(lines)])));
 export function createPetDialogue(random=Math.random){
  const recent=[],visited=new Set();
  return context=>{const key=PHRASES[context]?context:'general',pool=PHRASES[key];let line;if(!visited.has(key)){line=pool[0];visited.add(key);}else{const fresh=pool.filter(s=>!recent.includes(s));const options=fresh.length?fresh:pool.filter(s=>s!==recent.at(-1));line=options[Math.min(options.length-1,Math.floor(random()*options.length))];}recent.push(line);if(recent.length>6)recent.shift();return line;};
