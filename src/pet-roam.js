@@ -86,7 +86,7 @@ export function roamPet(stage, pet) {
 
   const showInvite = () => { if (!usable() || document.activeElement === input || !rectVisible(input?.getBoundingClientRect()) || performance.now() - lastActivity < 15000) return; bubble.textContent = nextAside('idle');bubble.dataset.context='idle';lastBubble=performance.now(); placeSpeech(); bubble.hidden = false; flight.dataset.point = 'true';const r=input.getBoundingClientRect();flight.style.setProperty('--point-angle',`${Math.atan2(r.top+r.height/2-destination.y-50,r.left+r.width/2-destination.x-60)*180/Math.PI+23}deg`); input?.classList.add('dot-invite');  };
   const sayAside = (context,onFocus=false,onArrival=false) => {
-    if(!usable()||protectedSpeech()||(editing()&&!(context==='chat'&&document.activeElement===input&&lastTyping<lastChatFocus))||document.querySelector('#intro')||flight.dataset.flying==='true'||(onFocus?performance.now()-lastEncouragement<10000:performance.now()-lastBubble<(bubble.hidden||(onArrival&&bubble.dataset.context!==context)?3500:18000)))return;
+    if(!usable()||pendingMove||protectedSpeech()||(editing()&&!(context==='chat'&&document.activeElement===input&&lastTyping<lastChatFocus))||document.querySelector('#intro')||flight.dataset.flying==='true'||(onFocus?performance.now()-lastEncouragement<10000:performance.now()-lastBubble<(bubble.hidden||(onArrival&&bubble.dataset.context!==context)?3500:18000)))return;
     if(onFocus)lastEncouragement=performance.now();bubble.textContent=nextAside(context);bubble.dataset.context=context;placeSpeech();bubble.hidden=false;lastBubble=performance.now();flight.dataset.point='false';
   };
   const showArrival = target => sayAside(target.closest('#services')?'services':target.closest('.breakout')?'game':'design',false,true);
