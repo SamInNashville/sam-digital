@@ -43,3 +43,12 @@ footer .footer-note{max-width:310px;line-height:1.7}
 @media(prefers-reduced-motion:reduce){.dot-flight{transition:none!important}.dot-flight *{animation:none!important}.dot-bubble{display:none}}
 
 .dot-flight #companion svg{overflow:visible}
+
+/* Compact character-led welcome replaces the explanatory introduction block. */
+.sam-welcome{height:100px;margin:8px auto 18px;display:flex;justify-content:center}
+.sam-welcome #companion-stage{height:96px;min-width:82px;width:82px}
+.sam-welcome #companion{left:4px}
+.sam-greeting{display:none;position:absolute;left:90px;top:12px;width:160px;color:#d8eee8;font-size:12px;line-height:1.5}
+#companion-stage[data-still=true] .sam-greeting{display:block}
+#privacy-details #companion-toggle{position:static;font-size:12px;margin:8px 0;color:#bcded8}
+@media(max-width:680px){.sam-welcome{justify-content:flex-start;margin-left:28px}.sam-greeting{width:155px}}

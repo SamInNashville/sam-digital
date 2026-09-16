@@ -24,3 +24,7 @@ Thrust must read as bubbles, not tiny sparks or a flame. They should visibly inh
 The controller is authored UI choreography, not an autonomous model or access to private visitor thoughts. Model instructions and inference are outside this change.
 
 Verified locally: actual rendered bubble pixels change over time; continuous scroll visibility on desktop and phone; keyboard focus remains with the visitor; deterministic force/collision tests and experience/gallery/story regressions pass. Bubble renderer supports up to 48 particles with bounded per-step integration. Legacy `tests/pet-roam.mjs` forwards to the new browser contract.
+
+## Content-led hover refinement
+
+The opening now reads “Sam is here to help you.” Sam introduces himself with “I'm Sam! I'll guide you.” The old explanatory introduction is removed; privacy details and a tucked-away Hide Sam control remain. Perches derive from the active conversation/demo or the visible content section, rather than a right-edge fallback. Eye tracking remains unchanged. Smaller transparent-outline bubbles emit continuously while hovering, increase during travel, and stop under pause/reduced-motion/hide. Rendering is capped at 30 updates per second and a maximum 1800px canvas dimension. `tests/sam-hover.mjs` verifies the exact copy, sustained stationary emission, content-adjacent perch, gaze and pause.
