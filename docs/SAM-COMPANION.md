@@ -33,8 +33,14 @@ The opening now reads “Sam is here to help you.” Sam introduces himself with
 
 - Increased downward ejection to 120px/s while hovering and 190px/s in flight, before inherited motion/drag/buoyancy. Bubble size and transparency are unchanged.
 - Authored combinatorial phrase banks: 100 variations each for services, Breakout, design, chat encouragement and general asides; small additional banks for waiting, reply, idle and tickle moments. Context selection does not inspect visitor text. Sarcastic site/demo lines never come from the chat encouragement bank. Requested example lines are each context's first line.
-- Roughly 14-second minimum spacing for automatic asides; brief supportive input-focus exception with its own cooldown. Actual typing clears speech immediately. Nothing is inserted into the enquiry transcript. No extra model calls.
+- Roughly 10-second minimum spacing for automatic asides; a newly explored section can respond sooner; brief supportive input-focus exception with its own cooldown. Actual typing clears speech immediately. Nothing is inserted into the enquiry transcript. No extra model calls.
 - Travel uses bounded curved keyframes, an occasional loop when space permits, and overshoot/settling. Ticklish proximity adds a short bounded dodge, mouse-only, cooled down, disabled while editing/paused. It never intercepts input.
 - `tests/pet-dialogue.mjs`, `pet-flight.mjs`, `pet-context.mjs`, `pet-personality.mjs` and `pet-tickle.mjs` check banks/physics, geometry, exact contextual examples, rendered spontaneous chatter/flight, and real pointer proximity.
 
 An optional model-fed aside could be added later as a non-blocking part of a completed conversational response, with length/safety validation and authored fallback. It is deliberately not connected in this release.
+
+## Longer-lived speech refinement
+
+Speech no longer expires on a short hide timer. It stays until a replacement line, movement to a new perch, or visitor intervention. Automatic asides replace the line after at least 10 seconds while not editing; new section arrivals can respond after 3.5 seconds. The scheduler checks once per second after 1.8 seconds of quiet. Pointer entry into the bubble's bounds clears it after a 600ms grace period; ordinary distant pointer motion still just tracks the visitor. Typing, clicks, keys, scrolling, pause/hide, dialogs and reduced motion clear or suppress speech. The one-time idle invitation waits until the current line has had eight seconds.
+
+Slightly wider, rounded speech boxes use more vertical placement candidates and a lightweight pointer-transparent SVG tail to visibly anchor them to Sam. Tail and speech share lifecycle and disappear before flight. `tests/pet-speech.mjs` verifies longer greeting/section dwell, automatic replacement without a blank interval, mouse intervention, typing, services-heading clearance and mobile bounds. Browser AI inference remains untouched.

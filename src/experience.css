@@ -52,3 +52,9 @@ footer .footer-note{max-width:310px;line-height:1.7}
 #companion-stage[data-still=true] .sam-greeting{display:block}
 #privacy-details #companion-toggle{position:static;font-size:12px;margin:8px 0;color:#bcded8}
 @media(max-width:680px){.sam-welcome{justify-content:flex-start;margin-left:28px}.sam-greeting{width:155px}}
+
+/* A lightweight speech tail anchors longer-lived asides to Sam. */
+.pet-speech-tail{position:fixed;inset:0;width:100%;height:100%;z-index:15;pointer-events:none;overflow:visible}
+.pet-speech-tail path{fill:#152a32f5;stroke:#a9dfd65c;stroke-width:1;stroke-linejoin:round}
+.dot-bubble{max-width:208px;border-radius:16px;line-height:1.55}
+@media(prefers-reduced-motion:reduce){.pet-speech-tail{display:none}}
