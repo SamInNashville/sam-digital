@@ -27,3 +27,22 @@
 footer .footer-note{max-width:310px;line-height:1.7}
 @media(max-width:680px){.ai-introduction{gap:10px;margin-bottom:24px}.ai-introduction strong{font-size:12px}.ai-introduction p{font-size:11px}#companion-stage{width:94px;min-width:94px}#companion{left:10px}.has-conversation .ai-introduction{margin-top:12px}.privacy-details{margin:10px 4px}}
 @media(prefers-reduced-motion:reduce){#companion-stage *{animation:none!important;transition:none!important}}
+
+/* Dot's jetpack: movement belongs to a separate pointer-transparent layer. */
+.dot-flight{position:fixed;left:0;top:0;width:82px;height:98px;z-index:15;pointer-events:none;transition:none;will-change:transform}
+.dot-flight #companion{left:4px;top:0;pointer-events:none}
+.dot-flight[data-flying=true] #companion{animation:dot-cruise .28s ease-in-out infinite alternate}
+.dot-flight[data-mood=listening] #companion{animation:dot-attentive 1.3s ease-in-out infinite}
+.dot-flight[data-mood=thinking] .dot-antenna{animation:dot-antenna .7s ease-in-out infinite alternate}
+.dot-flight[data-mood=reply] #companion{animation:dot-hello .6s ease-out 2}
+.dot-exhaust,.dot-exhaust-core{opacity:0;transform-origin:50% 80px}
+.dot-flight[data-flying=true] .dot-exhaust,.dot-flight[data-flying=true] .dot-exhaust-core{opacity:.85;animation:dot-thrust .16s ease-in-out infinite alternate}
+.dot-point{opacity:0}.dot-flight[data-point=true] .dot-point{opacity:1}.dot-point{transform-origin:77px 64px;transform:rotate(var(--point-angle,0deg))}
+.dot-bubble{position:fixed;z-index:16;max-width:184px;padding:12px 14px;border:1px solid #a9dfd65c;border-radius:16px 16px 16px 4px;background:#152a32f5;color:#e0fff3;font-size:12px;line-height:1.5;box-shadow:0 8px 28px #0004;pointer-events:none}
+#prompt.dot-invite{box-shadow:inset 3px 0 #a9dfd6;padding-left:12px;transition:box-shadow .3s}
+.dot-flight[data-still=true] *,html[data-motion-paused=true] .dot-flight *{animation:none!important;transition:none!important}
+@keyframes dot-cruise{from{transform:rotate(var(--lean,5deg)) translateY(0)}to{transform:rotate(var(--lean,5deg)) translateY(-2px)}}
+@keyframes dot-thrust{from{transform:scaleY(.65)}to{transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.dot-flight{transition:none!important}.dot-flight *{animation:none!important}.dot-bubble{display:none}}
+
+.dot-flight #companion svg{overflow:visible}

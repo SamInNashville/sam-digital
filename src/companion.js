@@ -1,3 +1,4 @@
+import {roamPet} from './pet-roam.js';
 import './experience.css';
 // A decorative AI character. No chat text is read, stored or sent here.
 export function startCompanion(host){
@@ -14,7 +15,7 @@ export function startCompanion(host){
  document.addEventListener('pointermove',e=>{if(stopped()||e.pointerType==='touch')return;const r=pet.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)return;pet.style.setProperty('--look-x',`${Math.max(-3,Math.min(3,(e.clientX-r.left-r.width/2)/80))}px`);pet.style.setProperty('--look-y',`${Math.max(-2,Math.min(2,(e.clientY-r.top-r.height/2)/100))}px`);},{passive:true});
  toggle.addEventListener('click',()=>{hidden=!hidden;pet.hidden=hidden;toggle.textContent=hidden?'Show companion':'Hide companion';toggle.setAttribute('aria-expanded',String(!hidden));sync();});
  window.addEventListener('sam-motion',e=>{paused=e.detail.paused;sync();});reduce.addEventListener('change',()=>{paused=reduce.matches||document.documentElement.dataset.motionPaused==='true';sync();});document.addEventListener('visibilitychange',sync);
- addEventListener('pagehide',()=>{clearTimeout(typingTimer);clearTimeout(replyTimer);stage.dataset.still='true';});addEventListener('pageshow',sync);setState('idle');sync();
+ addEventListener('pagehide',()=>{clearTimeout(typingTimer);clearTimeout(replyTimer);stage.dataset.still='true';});addEventListener('pageshow',sync);setState('idle');sync();roamPet(stage,pet);
 }
 export function startMotion(control){
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');let userPaused=false;
