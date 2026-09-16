@@ -8,6 +8,14 @@ export function createBubble({ x = 0, y = 0, vx = 0, vy = 0, size = 4, life = BU
   return { x, y, vx, vy, size, age: 0, life };
 }
 
+// Bubble geometry is projected at birth; live pod positions are already in screen space.
+export function createEmittedBubble(e,sample){
+  const scale=clamp(Number(e.scale)||1,.65,1.25),pod=sample%2;
+  return createBubble({x:e.x+(pod?1:-1)*(e.podOffset||20*scale),y:e.y,
+    vx:e.vx+(pod?16:-16)*scale,vy:e.vy+(e.moving?THRUST.flight:THRUST.hover)*scale,
+    size:(4+(sample%4)*1.3)*scale,life:1.8+(sample%4)*.28});
+}
+
 export function stepBubble(bubble, dt, bounds = { width: 320, height: 240 }) {
   const t = clamp(Number(dt) || 0, 0, 0.05);
   const drag = Math.pow(0.98, t * 60);
@@ -40,11 +48,11 @@ export function createBubbleField(parent, getEmitter) {
   const ctx = canvas.getContext('2d'), bubbles = []; canvas.dataset.limit = String(BUBBLE_LIMIT); let raf = 0, previous = performance.now(), disposed = false, emitCarry = 0, frames = 0, serial = 0, timer = 0;
   const resize = () => { const ratio = Math.min(1.5, devicePixelRatio || 1, 1800 / Math.max(innerWidth, innerHeight)); canvas.width = innerWidth * ratio; canvas.height = innerHeight * ratio; ctx?.setTransform(ratio, 0, 0, ratio, 0, 0); };
   const frame = now => {
-    if (disposed) return; if(now-previous<1000/30){raf=requestAnimationFrame(frame);return;} const dt = Math.min(0.05, Math.max(0, (now - previous) / 1000)); previous = now; const e = getEmitter();
+    if (disposed) return; if(now-previous<1000/30){raf=requestAnimationFrame(frame);return;} const dt = Math.min(0.05, Math.max(0, (now - previous) / 1000)); previous = now; const e = getEmitter();canvas.dataset.emitterScale=String(e?.scale||1);
     if(e?.suspended||document.hidden){bubbles.length=0;ctx?.clearRect(0,0,innerWidth,innerHeight);canvas.dataset.count='0';}
     if (e?.suspended||document.hidden||(!e?.active && bubbles.length === 0)) { timer = setTimeout(() => { raf = requestAnimationFrame(frame); }, 200); return; }
     canvas.dataset.frames = String(++frames); canvas.dataset.count = String(bubbles.length);
-    if (e?.active && bubbles.length < BUBBLE_LIMIT) { emitCarry += dt * (e.moving ? 16 : 8); const n = Math.floor(emitCarry); emitCarry -= n; for (let i = 0; i < n && bubbles.length < BUBBLE_LIMIT; i += 1) { const sample=serial++;const pod = sample % 2; bubbles.push(createBubble({ x: e.x + (pod ? 1 : -1)*(e.podOffset||20), y: e.y, vx: e.vx + (pod ? 16 : -16), vy: e.vy + (e.moving ? THRUST.flight : THRUST.hover), size: 4 + (sample % 4) * 1.3, life: 1.8 + (sample % 4) * 0.28 })); } }
+    if (e?.active && bubbles.length < BUBBLE_LIMIT) { emitCarry += dt * (e.moving ? 16 : 8); const n = Math.floor(emitCarry); emitCarry -= n; for (let i = 0; i < n && bubbles.length < BUBBLE_LIMIT; i += 1) { bubbles.push(createEmittedBubble(e,serial++)); } }
     for (const b of bubbles) stepBubble(b, dt, { width: innerWidth, height: innerHeight }); resolveBubbleCollisions(bubbles);
     if (ctx) { ctx.clearRect(0, 0, innerWidth, innerHeight); for (const b of bubbles) { if (b.age >= b.life) continue; const alpha = bubbleOpacity(b); ctx.globalAlpha = 0; ctx.fillStyle = '#8cf5e0'; ctx.beginPath(); ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = alpha * 0.42; ctx.strokeStyle = '#c4f9f0'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = alpha * 0.45; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - b.size * .16, b.y - b.size * .18, Math.max(1, b.size * .1), 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
     for (let i = bubbles.length - 1; i >= 0; i -= 1) if (bubbles[i].age >= bubbles[i].life) bubbles.splice(i, 1); raf = requestAnimationFrame(frame);

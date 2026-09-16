@@ -1,10 +1,11 @@
+import { addFlightDepth } from './pet-depth.js';
 // Continuous, time-sampled parabolic flights with a gentle elastic settle.
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function planPetFlight(from,to,{width,height,trip=0}={}){
  const bounds={left:10,right:Math.max(10,width-92),top:12,bottom:Math.max(12,height-110)};
  const bound=p=>({x:clamp(p.x,bounds.left,bounds.right),y:clamp(p.y,bounds.top,bounds.bottom)});
  const start=bound(from),end=bound(to),dx=end.x-start.x,dy=end.y-start.y,distance=Math.hypot(dx,dy);
- if(distance<12)return {kind:'settle',points:[{...start,offset:0},{...end,offset:1}],duration:600};
+ if(distance<12)return addFlightDepth({kind:'settle',points:[{...start,offset:0},{...end,offset:1}],duration:600},{width,trip,distance:0});
  const nx=-dy/distance,ny=dx/distance;
  let bend=Math.min(76,distance*.2)*(trip%2?1:-1),spring=.9,points;
  for(let attempt=0;attempt<10;attempt++){
@@ -20,5 +21,5 @@ export function planPetFlight(from,to,{width,height,trip=0}={}){
   bend*=.65;spring*=.5;
  }
  points[0]={...start,offset:0};points[96]={...end,offset:1};
- return {kind:'parabola',points,duration:Math.min(4200,2300+distance*1.5)};
+ return addFlightDepth({kind:'parabola',points,duration:Math.min(4200,2300+distance*1.5)},{width,trip,distance});
 }
