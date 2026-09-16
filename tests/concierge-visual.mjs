@@ -6,7 +6,7 @@ await mkdir('proof/concierge',{recursive:true});
 await page.addInitScript(()=>{Object.defineProperty(window,'LanguageModel',{value:undefined});window.Worker=class{postMessage(d){if(d.type==='init')queueMicrotask(()=>this.onmessage({data:{type:'ready',model:'Visual capture fixture'}}));}terminate(){}};});
 try{
  await page.goto(process.env.BASE_URL||'http://127.0.0.1:4178/sam-digital/');await expect(page.locator('#atmosphere')).toHaveAttribute('data-renderer','webgpu',{timeout:20000});await expect(page.locator('#intro')).toHaveCount(0);
- const pixels=()=>page.locator('#atmosphere canvas').evaluate(c=>c.toDataURL());const a=await pixels();await page.waitForTimeout(700);expect(await pixels()).not.toBe(a);
+ const pixels=()=>page.locator('#atmosphere > canvas:not(.neural-overlay)').evaluate(c=>c.toDataURL());const a=await pixels();await page.waitForTimeout(700);expect(await pixels()).not.toBe(a);
  await page.screenshot({path:'proof/concierge/smoke.png'});
  await page.locator('#prompt').fill('I need help making appointments easier for my customers.');await page.locator('#composer').evaluate(f=>f.requestSubmit());await page.waitForTimeout(900);await expect(page.locator('#atmosphere')).toHaveAttribute('data-state','researching');const network=await pixels();expect(network).not.toBe(a);await page.screenshot({path:'proof/concierge/synapses.png'});await page.waitForTimeout(700);expect(await pixels()).not.toBe(network);
  await page.locator('#motion').click();await page.waitForTimeout(150);const paused=await pixels();await page.waitForTimeout(250);expect(await pixels()).toBe(paused);

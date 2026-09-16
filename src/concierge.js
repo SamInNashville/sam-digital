@@ -1,3 +1,4 @@
+import {startCompanion,startMotion} from './companion.js';
 import {createLocalAssistant} from './local-assistant.js';
 import {starterAnswer} from './starter-answers.js';
 import {interpret,storyText,wantsPerson,EMAIL,PERSON} from './story-policy.js';
@@ -10,10 +11,13 @@ const record={id:crypto.randomUUID(),archive:[],history:[],topic:1,notes:'',draf
 let status={phase:'preparing'},current=null,version=0;
 function persist(){record.draft=input.value;}
 function add(role,content){const m={role,content,at:new Date().toISOString(),topic:record.topic};record.history.push(m);record.archive.push(m);persist();return m;}
-function render(role,text){const box=document.createElement('div');box.className='turn '+role;if(role==='assistant'){const name=document.createElement('span');name.className='speaker';name.textContent='SAM DIGITAL · AI GUIDE';box.append(name);const answer=document.createElement('div');answer.className='answer-text';answer.textContent=text;box.append(answer);}else box.textContent=text;transcript.append(box);return box;}
+function render(role,text){const box=document.createElement('div');box.className='turn '+role;if(role==='assistant'){const name=document.createElement('span');name.className='speaker';name.textContent='DOT · BROWSER AI';box.append(name);const answer=document.createElement('div');answer.className='answer-text';answer.textContent=text;box.append(answer);}else box.textContent=text;transcript.append(box);return box;}
 function detail(){return status.phase==='ready'?'Reviewing the details you shared.':'Getting ready. Your message is waiting here.';}
 function state(next){status=next;document.body.dataset.model=next.phase;$('#state-label').textContent=next.phase==='preparing'?'Getting ready…':next.phase==='failed'?'The guide is unavailable. You can still send your request.':'Ready when you are.';$('#state-label').removeAttribute('title');$('#retry').hidden=next.phase!=='failed';const p=$('#model-progress');p.hidden=next.phase!=='preparing';if(Number.isFinite(next.progress))p.value=Math.max(0,Math.min(1,next.progress));else p.removeAttribute('value');if(current)current.hint.textContent=detail();}
+startMotion(motion);startCompanion(atmosphere);
 const assistant=createLocalAssistant(state);assistant.start().catch(()=>{});
+import('./neural.js').then(m=>m.startNeural(atmosphere)).catch(()=>{});
+import('./showcase.js').then(m=>m.mountShowcase(document.querySelector('#showcase'))).catch(()=>{});
 import('./atmosphere.js').then(m=>m.startAtmosphere(atmosphere,motion)).catch(()=>{atmosphere.dataset.renderer='fallback';});
 function buttonState(busy){send.type=busy?'button':'submit';send.dataset.stop=String(busy);send.setAttribute('aria-label',busy?'Stop response':'Send message');send.textContent=busy?'■':'↑';$('#fresh').disabled=busy;document.querySelectorAll('[data-prompt]').forEach(b=>b.disabled=busy);}
 function suggested(){followups.replaceChildren();followups.hidden=false;const review=document.createElement('button');review.type='button';review.textContent='Send Request ↗';review.className='primary';review.addEventListener('click',openBrief);followups.append(review);const more=document.createElement('button');more.type='button';more.textContent='Add more detail';more.addEventListener('click',()=>{input.focus();input.scrollIntoView({block:'center',behavior:'smooth'});});followups.append(more);document.body.dataset.handoff=record.assessment.reason||'exploring';}

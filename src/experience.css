@@ -1,0 +1,29 @@
+/* Optional experience layer: the established conversation remains the foreground. */
+.ai-introduction{display:flex;align-items:center;justify-content:center;gap:16px;margin:0 auto 20px;text-align:left;max-width:430px}
+.ai-introduction strong{font-size:14px;font-weight:600;color:#d3f0e9}.ai-introduction p{font-size:12px;color:#b8c7dc;line-height:1.6;margin:5px 0 0}.ai-introduction a{text-decoration:underline;text-underline-offset:3px}
+#companion-stage{position:relative;width:116px;min-width:116px;height:130px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+#companion{width:74px;height:80px;position:absolute;top:0;left:21px;filter:drop-shadow(0 5px 13px #7cdcc32c);transform-origin:50% 90%;animation:dot-idle 5s ease-in-out infinite}
+#companion svg{width:100%;height:100%;overflow:visible}.dot-eyes{transform:translate(var(--look-x,0px),var(--look-y,0px));transition:transform .16s ease-out}.dot-eyelids{transform-origin:50% 50%;animation:dot-blink 6s infinite}.dot-antenna{transform-origin:50px 28px}.dot-halo{opacity:.4}
+#companion-label{position:absolute;width:110px;text-align:center;top:83px;font-size:9px;color:#badfd8;line-height:1.35;letter-spacing:.2px}
+#companion-toggle{position:absolute;top:110px;font-size:9px;color:#a6b7ca;text-decoration:underline;text-underline-offset:3px;padding:4px 8px;white-space:nowrap}
+#companion-stage[data-mood=thinking] #companion{animation:dot-thinking 2.5s ease-in-out infinite}
+#companion-stage[data-mood=thinking] .dot-antenna{animation:dot-antenna .7s ease-in-out infinite alternate}
+#companion-stage[data-mood=thinking] .dot-halo{opacity:.9}
+#companion-stage[data-mood=listening] #companion{animation:dot-attentive 1.3s ease-in-out infinite}
+#companion-stage[data-mood=reply] #companion{animation:dot-hello .6s ease-out 2}
+#companion-stage[data-still=true] *,html[data-motion-paused=true] #companion-stage *{animation:none!important;transition:none!important}
+#companion-stage[data-still=true] #companion{transform:none}
+@keyframes dot-idle{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-5px) rotate(3deg)}}
+@keyframes dot-thinking{0%,100%{transform:translate(-17px,0) rotate(-7deg)}25%{transform:translate(0,-13px) rotate(0)}50%{transform:translate(17px,0) rotate(7deg)}75%{transform:translate(0,-8px) rotate(0)}}
+@keyframes dot-attentive{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg) translateY(-3px)}}
+@keyframes dot-hello{0%,100%{transform:translateY(0)}45%{transform:translateY(-14px) rotate(7deg)}}
+@keyframes dot-antenna{to{transform:rotate(12deg)}}
+@keyframes dot-blink{0%,44%,48%,100%{transform:scaleY(1)}46%{transform:scaleY(.08)}}
+.privacy-details{max-width:540px;margin:10px auto 0;text-align:left;border:0;font-size:12px;color:#b6c6da}
+.privacy-details summary{display:block;text-align:center;font-size:11px;color:#bcded8;padding:8px;list-style:revert}
+.privacy-details p{font-size:12px;line-height:1.75;margin:10px 0;padding:0}
+.privacy-details[open]{background:#131d2aee;border:1px solid #ffffff20;border-radius:12px;padding:8px 17px}
+.has-conversation .ai-introduction{justify-content:flex-start;margin-left:0}.has-conversation .ai-introduction p{display:block}
+footer .footer-note{max-width:310px;line-height:1.7}
+@media(max-width:680px){.ai-introduction{gap:10px;margin-bottom:24px}.ai-introduction strong{font-size:12px}.ai-introduction p{font-size:11px}#companion-stage{width:94px;min-width:94px}#companion{left:10px}.has-conversation .ai-introduction{margin-top:12px}.privacy-details{margin:10px 4px}}
+@media(prefers-reduced-motion:reduce){#companion-stage *{animation:none!important;transition:none!important}}

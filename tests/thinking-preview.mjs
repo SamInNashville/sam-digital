@@ -17,6 +17,6 @@ try{
  await page.screenshot({path:'proof/thinking/responding.png'});
  await page.evaluate(()=>{window.fixtureWorker.onmessage({data:{type:'delta',id:window.requestId,text:'I can help you prepare that enquiry. What should work better?'}});window.fixtureWorker.onmessage({data:{type:'done',id:window.requestId}});});
  await expect(page.locator('#atmosphere')).toHaveAttribute('data-thinking','idle');await expect.poll(readActivity).toBeLessThan(.001);await page.waitForTimeout(1000);await page.screenshot({path:'proof/thinking/finished.png'});
- await page.locator('#motion').click();const a=await page.locator('canvas').evaluate(c=>c.toDataURL());await page.waitForTimeout(300);expect(await page.locator('canvas').evaluate(c=>c.toDataURL())).toBe(a);
+ await page.locator('#motion').click();const a=await page.locator('#atmosphere > canvas:not(.neural-overlay)').evaluate(c=>c.toDataURL());await page.waitForTimeout(300);expect(await page.locator('#atmosphere > canvas:not(.neural-overlay)').evaluate(c=>c.toDataURL())).toBe(a);
  await writeFile('proof/thinking/results.json',JSON.stringify({renderer:'real WebGPU',model:'explicit held fixture',typingActivates:true,responseActivates:true,completionExtinguishes:true,pauseStable:true,fps},null,2));console.log('PASS typing, response, completion, pause; fps',fps);
 }finally{const video=page.video();await context.close();await video.saveAs('proof/thinking/pinpoint-loading.webm');await browser.close();}
