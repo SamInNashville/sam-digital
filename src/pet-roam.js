@@ -1,40 +1,73 @@
-// Local choreography only: observes element focus and pointer position, never field values.
-export function roamPet(stage,pet){
- const flight=document.createElement('div');flight.className='dot-flight';flight.setAttribute('aria-hidden','true');flight.dataset.mood=stage.dataset.mood||'idle';
- const bubble=document.createElement('div');bubble.className='dot-bubble';bubble.setAttribute('aria-hidden','true');bubble.hidden=true;flight.append(pet);document.body.append(flight,bubble);
- const svg=pet.querySelector('svg');svg.insertAdjacentHTML('afterbegin','<g class="dot-jetpack"><rect x="10" y="48" width="15" height="32" rx="6" fill="#55768f" stroke="#c4eee4"/><rect x="75" y="48" width="15" height="32" rx="6" fill="#55768f" stroke="#c4eee4"/><path class="dot-exhaust" d="M12 80Q10 103 18 123Q26 103 23 80ZM77 80Q75 103 83 123Q91 103 88 80Z" fill="#73cdfa"/><path class="dot-exhaust-core" d="M15 80L18 108 21 80M80 80L83 108 86 80" fill="#f0fff9"/></g>');
- svg.insertAdjacentHTML('beforeend','<g class="dot-point"><path d="M77 64L93 57M87 53L94 57 91 64" stroke="#d7fff2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>');
- let lastActivity=performance.now(),lastTrip=0,lastBubble=-1e9,idleHinted=false,trip=0,x=0,y=0,landing,flightAnimation,bubbleTimer,scrollTimer,disposed=false;
- const input=document.querySelector('#prompt');const active=()=>!disposed&&!pet.hidden&&stage.dataset.still!=='true'&&!document.hidden&&!document.querySelector('dialog[open]');
- const visible=r=>r.width>0&&r.height>0&&r.bottom>8&&r.top<innerHeight-8;
- const obstacles=()=>[...document.querySelectorAll('header,#composer,.turn,.showcase-card,button,a,input,textarea,select,summary,h1,h2,h3,p,.ai-introduction>div:last-child,.privacy,dialog[open]')].filter(e=>!e.closest('#companion-stage')&&!e.closest('.dot-flight')&&!e.closest('.dot-bubble')).map(e=>e.getBoundingClientRect()).filter(visible);
- const fits=(r,blocks)=>r.x>=8&&r.y>=8&&r.x+r.w<=innerWidth-8&&r.y+r.h<=innerHeight-8&&!blocks.some(b=>r.x<b.right+7&&r.x+r.w>b.left-7&&r.y<b.bottom+7&&r.y+r.h>b.top-7);
- function spot(target,away=false){const blocks=obstacles(),points=[];const home=stage.getBoundingClientRect();if(visible(home))points.push({x:home.left+10,y:home.top});for(let yy=70;yy<innerHeight-100;yy+=60)for(const xx of [12,innerWidth-94,innerWidth*.24,innerWidth*.72])points.push({x:xx,y:yy});const candidates=points.filter(p=>fits({...p,w:82,h:98},blocks));const tx=target?.x??innerWidth/2,ty=target?.y??innerHeight/2;return candidates.sort((a,b)=>{const cost=p=>Math.hypot(p.x-tx,p.y-ty)+(away&&Math.hypot(p.x-x,p.y-y)<100?1000:0);return cost(a)-cost(b);})[0];}
+// Purposeful, viewport-fixed companion choreography. It observes geometry only.
+import { createBubbleField } from './pet-bubbles.js';
 
- // Visibility graph around padded text/control rectangles: never fly through them.
- function route(start,end){
-  const blocks=obstacles();const valid=p=>fits({...p,w:82,h:98},blocks);
-  const clear=(a,b)=>!blocks.some(r=>{let lo=0,hi=1;for(const [v,d,min,max] of [[a.x,b.x-a.x,r.left-89,r.right+7],[a.y,b.y-a.y,r.top-105,r.bottom+7]]){if(Math.abs(d)<.001){if(v<=min||v>=max)return false;continue;}const t1=(min-v)/d,t2=(max-v)/d;lo=Math.max(lo,Math.min(t1,t2));hi=Math.min(hi,Math.max(t1,t2));if(lo>=hi)return false;}return hi>0&&lo<1;});
-  if(clear(start,end))return [start,end];
-  const nodes=[start,end,...blocks.flatMap(r=>[{x:r.left-90,y:r.top-106},{x:r.right+8,y:r.top-106},{x:r.left-90,y:r.bottom+8},{x:r.right+8,y:r.bottom+8}]).filter(valid)];
-  const costs=nodes.map(()=>Infinity),previous=[],done=new Set();costs[0]=0;
-  while(done.size<nodes.length){let current=-1;for(let i=0;i<nodes.length;i++)if(!done.has(i)&&(current<0||costs[i]<costs[current]))current=i;if(current<0||!Number.isFinite(costs[current]))break;if(current===1){const path=[];for(let i=1;i!==undefined;i=previous[i])path.unshift(nodes[i]);return path;}done.add(current);for(let j=0;j<nodes.length;j++){if(done.has(j))continue;const distance=Math.hypot(nodes[j].x-nodes[current].x,nodes[j].y-nodes[current].y);if(costs[current]+distance<costs[j]&&clear(nodes[current],nodes[j])){costs[j]=costs[current]+distance;previous[j]=current;}}}
-  return null;
- }
- function hush(){bubble.hidden=true;clearTimeout(bubbleTimer);flight.dataset.point='false';input?.classList.remove('dot-invite');}
- function say(text){if(!active()||performance.now()-lastBubble<20000)return;const blocks=obstacles();const w=Math.min(184,innerWidth-20),h=66;const choices=[{x:x+88,y},{x:x-w-8,y},{x:x-w/2+35,y:y-76},{x:x-w/2+35,y:y+102}];const place=choices.find(p=>fits({...p,w,h},blocks));if(!place)return;bubble.textContent=text;bubble.style.left=place.x+'px';bubble.style.top=place.y+'px';bubble.hidden=false;lastBubble=performance.now();bubbleTimer=setTimeout(hush,5000);}
- function move(target,reason='explore',instant=false){if(!active())return;const place=spot(target,reason==='explore');if(!place){flight.hidden=true;return;}const current=flight.getBoundingClientRect();const start={x:current.left,y:current.top};const path=instant?[place]:route(start,place);if(!path)return;flight.hidden=false;hush();clearTimeout(landing);flightAnimation?.cancel();flight.dataset.flying=String(!instant);flight.dataset.reason=reason;flight.style.setProperty('--lean',place.x>x?'8deg':'-8deg');x=place.x;y=place.y;flight.style.transform=`translate3d(${x}px,${y}px,0)`;lastTrip=performance.now();let duration=0;if(!instant){let length=0;const distances=[0];for(let i=1;i<path.length;i++){length+=Math.hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y);distances.push(length);}duration=Math.max(900,Math.min(3500,length*2.5));flightAnimation=flight.animate(path.map((p,i)=>({transform:`translate3d(${p.x}px,${p.y}px,0)`,offset:length?distances[i]/length:i/(path.length-1)})),{duration,easing:'ease-in-out'});}landing=setTimeout(()=>{flight.dataset.flying='false';if(target){pet.style.setProperty('--look-x',`${Math.max(-3,Math.min(3,(target.x-x-41)/80))}px`);pet.style.setProperty('--look-y',`${Math.max(-2,Math.min(2,(target.y-y-40)/100))}px`);}if(reason==='idle'){flight.dataset.point='true';input?.classList.add('dot-invite');say('Your next idea can start here.');lookAtInput();}},duration);}
+const INTERACTIVE = 'button,a,input,textarea,select,summary,[role="button"],.showcase-card,.turn,.privacy';
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
- function lookAtInput(){const r=input?.getBoundingClientRect();if(!r)return;flight.style.setProperty('--point-angle',`${Math.atan2(r.top+r.height/2-y-50,r.left+r.width/2-x-60)*180/Math.PI+23}deg`);pet.style.setProperty('--look-x',r.left+r.width/2>x?'3px':'-3px');pet.style.setProperty('--look-y','2px');}
- function activity(){lastActivity=performance.now();hush();}
- function focus(e){activity();if(!active())return;const r=e.target.getBoundingClientRect?.();if(!r)return;move({x:r.left+r.width/2,y:r.top+r.height/2},'focus');if(e.target.closest('#showcase'))setTimeout(()=>say(e.target.closest('.design-study')?'A new coat of paint?':'A tiny arcade detour.'),1700);}
- function pointer(e){if(!active()||e.pointerType==='touch')return;lastActivity=performance.now();if(performance.now()-lastTrip>6000&&document.activeElement!==input)move({x:e.clientX,y:e.clientY},'curious');}
- function sync(){flight.dataset.still=stage.dataset.still||'false';flight.dataset.mood=stage.dataset.mood||'idle';if(!active()){hush();flightAnimation?.cancel();flight.dataset.flying='false';clearTimeout(landing);flight.hidden=true;if(pet.parentNode!==stage)stage.prepend(pet);}else{if(pet.parentNode!==flight)flight.prepend(pet);flight.hidden=false;move(null,'return',true);}}
- const moodObserver=new MutationObserver(()=>{if(stage.dataset.still==='true'||pet.hidden||pet.parentNode!==flight){sync();return;}flight.dataset.mood=stage.dataset.mood||'idle';if(flight.dataset.mood==='thinking'){hush();const r=input.getBoundingClientRect();move({x:r.left,y:r.top},'thinking');}else if(flight.dataset.mood==='reply')say('Something to explore together.');});moodObserver.observe(stage,{attributes:true,attributeFilter:['data-mood','data-still']});
- const hiddenObserver=new MutationObserver(sync);hiddenObserver.observe(pet,{attributes:true,attributeFilter:['hidden']});
- const tick=setInterval(()=>{if(!active())return;const now=performance.now(),r=input?.getBoundingClientRect();if(!idleHinted&&now-lastActivity>18000&&r&&visible(r)&&document.activeElement!==input&&stage.dataset.mood==='idle'){idleHinted=true;move({x:r.left+r.width/2,y:r.top},'idle');return;}if(now-lastTrip>10000&&stage.dataset.mood==='idle'&&document.activeElement!==input){const side=++trip%2;move({x:side?innerWidth-90:40,y:100+(trip%4)*innerHeight*.17},'explore');}},1500);
- function scroll(){hush();flightAnimation?.cancel();clearTimeout(landing);clearTimeout(scrollTimer);flight.hidden=true;scrollTimer=setTimeout(()=>move(null,'scroll',true),160);}
- document.addEventListener('focusin',focus);document.addEventListener('pointermove',pointer,{passive:true});document.addEventListener('keydown',activity);document.addEventListener('pointerdown',activity);document.addEventListener('scroll',scroll,{passive:true});addEventListener('resize',scroll);document.addEventListener('visibilitychange',sync);document.addEventListener('toggle',sync,true);
- addEventListener('pagehide',()=>{disposed=true;hush();flightAnimation?.cancel();clearTimeout(landing);clearTimeout(scrollTimer);flight.hidden=true;});addEventListener('pageshow',()=>{disposed=false;lastActivity=performance.now();sync();});sync();
- return ()=>{clearInterval(tick);clearTimeout(landing);clearTimeout(scrollTimer);hush();moodObserver.disconnect();hiddenObserver.disconnect();stage.prepend(pet);flight.remove();bubble.remove();document.removeEventListener('focusin',focus);document.removeEventListener('pointermove',pointer);document.removeEventListener('keydown',activity);document.removeEventListener('pointerdown',activity);document.removeEventListener('scroll',scroll);removeEventListener('resize',scroll);document.removeEventListener('visibilitychange',sync);document.removeEventListener('toggle',sync,true);};
+export function roamPet(stage, pet) {
+  const flight = document.createElement('div');
+  flight.className = 'dot-flight'; flight.setAttribute('aria-hidden', 'true');
+  const bubble = document.createElement('div');
+  bubble.className = 'dot-bubble'; bubble.setAttribute('aria-hidden', 'true'); bubble.hidden = true;
+  flight.append(pet); document.body.append(flight, bubble);
+  const svg = pet.querySelector('svg');
+  if (svg && !svg.querySelector('.dot-jetpack')) svg.insertAdjacentHTML('afterbegin', '<g class="dot-jetpack"><rect x="10" y="48" width="15" height="32" rx="6" fill="#55768f" stroke="#c4eee4"/><rect x="75" y="48" width="15" height="32" rx="6" fill="#55768f" stroke="#c4eee4"/></g>');
+  if (svg && !svg.querySelector('.dot-point')) svg.insertAdjacentHTML('beforeend', '<g class="dot-point"><path d="M77 64L93 57M87 53L94 57 91 64" stroke="#d7fff2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>');
+
+  let flightAnimation, disposed = false, moveTimer = 0, scrollTimer = 0, bubbleTimer = 0, lastMove = 0, lastActivity = performance.now(), lastBubble = -Infinity, idleHinted = false, activeTarget = null;
+  let destination = null, emitter = { active: false, burst: false, x: 0, y: 0, vx: 0, vy: 0 };
+  const input = document.querySelector('#prompt');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const still = () => stage.dataset.still === 'true' || reduced.matches || document.hidden || !!document.querySelector('dialog[open]');
+  const usable = () => !disposed && !pet.hidden && !still();
+  const rectVisible = r => r && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight;
+  const home = () => { const r = stage.getBoundingClientRect(); return { x: clamp(r.left + 8, 8, innerWidth - 82), y: clamp(r.top - 2, 8, innerHeight - 104) }; };
+  const edgePerch = target => {
+    const narrow=innerWidth<500,w=narrow?68:82,h=narrow?84:98;
+    const focusRect=target?.getBoundingClientRect?.();const targetRoot=target?.closest?.('#composer,.showcase-card,.turn')||target;const r=targetRoot?.getBoundingClientRect?.();
+    const tx=r&&rectVisible(r)?r.left+r.width/2:innerWidth/2,ty=focusRect&&rectVisible(focusRect)?focusRect.top+focusRect.height/2:innerHeight*.34;
+    const preferredX=r&&rectVisible(r)?(tx<innerWidth/2?r.left-w-16:r.right+16):innerWidth-w-12;
+    const blocks=[...document.querySelectorAll('button,a,input,textarea,select,summary,h1,h2,h3,.lede,.ai-introduction>div:last-child,.breakout-canvas')].filter(e=>!e.closest('#companion-stage')).map(e=>({r:e.getBoundingClientRect(),weight:e.matches('button,a,input,textarea,select,summary')?30000:1800})).filter(b=>rectVisible(b.r));
+    const points=[];const xs=[clamp(preferredX,10,innerWidth-w-10),12,innerWidth-w-12];for(const x of xs){points.push({x,y:clamp(ty-h/2,12,innerHeight-h-14)});for(let y=12;y<innerHeight-h-12;y+=28)points.push({x,y});}
+    const cost=p=>Math.hypot(p.x-preferredX,p.y-(ty-h/2))+blocks.reduce((sum,b)=>sum+(p.x<b.r.right+5&&p.x+w>b.r.left-5&&p.y<b.r.bottom+5&&p.y+h>b.r.top-5?b.weight:0),0);
+    const chosen=points.sort((a,b)=>cost(a)-cost(b))[0];return {...chosen,w,h};
+  };
+
+  const setDocked = dock => {
+    if (dock) { flightAnimation?.cancel(); clearTimeout(moveTimer); hideBubble(); if (pet.parentNode !== stage) stage.prepend(pet); pet.style.removeProperty('width'); pet.style.removeProperty('height'); flight.hidden = true; bubble.hidden = true; emitter.active = false; }
+    else { if (pet.parentNode !== flight) flight.prepend(pet); const narrow = innerWidth < 500; pet.style.width = `${narrow ? 62 : 74}px`; pet.style.height = `${narrow ? 68 : 80}px`; flight.hidden = false; }
+  };
+  const moveTo = (target, reason = 'focus', immediate = false) => {
+    if (!usable()) { setDocked(true); return; }
+    const p = edgePerch(target); destination = p; setDocked(false); clearTimeout(moveTimer);
+    const intent = reason === 'reply' ? 'accompanying' : reason === 'idle' ? 'inviting' : reason === 'scroll' ? 'accompanying' : reason === 'chat' ? 'listening' : target?.closest?.('.breakout') ? 'observing-game' : target?.closest?.('.showcase-card') ? 'exploring-design' : 'listening';
+    flight.dataset.reason = reason; flight.dataset.intent = intent; flight.dataset.targetKind = target?.closest?.('.breakout') ? 'breakout' : target?.closest?.('.showcase-card') ? 'showcase' : target?.closest?.('#composer') || target === input ? 'chat' : 'interactive';
+    const current = flight.getBoundingClientRect(); const from = { x: current.left || p.x, y: current.top || p.y };
+    const distance = Math.hypot(p.x - from.x, p.y - from.y); const duration = immediate ? 0 : clamp(distance * 2.2, 650, 1900);
+    emitter = { active: !immediate && distance > 8, burst: reason === 'reply', x: from.x + 38, y: from.y + 82, vx: (p.x - from.x) / Math.max(duration / 1000, .1), vy: (p.y - from.y) / Math.max(duration / 1000, .1) };
+    flight.dataset.flying = String(!immediate && distance > 8); flight.dataset.reason = reason; flight.dataset.mood = stage.dataset.mood || 'idle';
+    flight.style.setProperty('--lean', p.x >= from.x ? '7deg' : '-7deg');
+    flightAnimation?.cancel();
+    if (duration) flightAnimation = flight.animate([{ transform: `translate3d(${from.x}px,${from.y}px,0)` }, { transform: `translate3d(${p.x}px,${p.y}px,0)` }], { duration, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    flight.style.transform = `translate3d(${p.x}px,${p.y}px,0)`; lastMove = performance.now();
+    moveTimer = setTimeout(() => { const r=target?.getBoundingClientRect?.(); if(r){pet.style.setProperty('--look-x',`${clamp((r.left+r.width/2-p.x-35)/80,-3,3)}px`);pet.style.setProperty('--look-y',`${clamp((r.top+r.height/2-p.y-40)/100,-2,2)}px`);} flight.dataset.flying = 'false'; emitter.active = false; if (reason === 'idle') showInvite(); else if (reason === 'focus' && target?.closest?.('.breakout,.showcase-card')) showArrival(target); }, duration);
+  };
+  const hideBubble = () => { bubble.hidden = true; clearTimeout(bubbleTimer); flight.dataset.point = 'false'; input?.classList.remove('dot-invite'); };
+  const placeSpeech=()=>{const r=pet.getBoundingClientRect();const left=r.left>innerWidth/2?r.left-196:r.right+12;bubble.style.left=`${clamp(left,8,innerWidth-192)}px`;bubble.style.top=`${clamp(innerWidth<500?r.top-62:r.top,8,innerHeight-72)}px`;};
+  const showInvite = () => { if (!usable() || document.activeElement === input || !rectVisible(input?.getBoundingClientRect()) || performance.now() - lastActivity < 15000 || bubble.hidden === false) return; bubble.textContent = 'A thought worth exploring?'; placeSpeech(); bubble.hidden = false; flight.dataset.point = 'true';const r=input.getBoundingClientRect();flight.style.setProperty('--point-angle',`${Math.atan2(r.top+r.height/2-destination.y-50,r.left+r.width/2-destination.x-60)*180/Math.PI+23}deg`); input?.classList.add('dot-invite'); bubbleTimer = setTimeout(hideBubble, 4800); };
+  const showArrival = target => { if (!usable() || document.activeElement === input || performance.now() - lastBubble < 20000) return; bubble.textContent = target.closest('.breakout') ? 'Let’s see that next shot.' : 'Trying a different look?'; placeSpeech(); bubble.hidden = false; lastBubble = performance.now(); flight.dataset.point = 'false'; bubbleTimer = setTimeout(hideBubble, 4200); };
+  const noteActivity = () => { lastActivity = performance.now(); hideBubble(); };
+  const focusOrHover = e => { const target = e.target.closest?.(INTERACTIVE); if (!target || target.closest('.dot-flight,.dot-bubble') || (target === activeTarget && performance.now() - lastMove < 1200)) return; activeTarget = target; clearTimeout(scrollTimer); noteActivity(); moveTo(target, target.closest('#composer') ? 'chat' : 'focus'); };
+  const returnToChat = () => { noteActivity(); moveTo(input || document.querySelector('#composer'), 'reply'); };
+  const sync = () => { flight.dataset.still = stage.dataset.still || 'false'; flight.dataset.mood = stage.dataset.mood || 'idle'; if (!usable()) setDocked(true); else if (pet.parentNode !== flight || flight.hidden) moveTo(input || stage, 'return', true); };
+  const onScroll = () => { if (disposed) return; hideBubble();lastActivity=performance.now();clearTimeout(scrollTimer);if(!usable()){setDocked(true);return;}const focused=document.activeElement;const target=focused?.matches(INTERACTIVE)&&rectVisible(focused.getBoundingClientRect())?focused:document.elementFromPoint(innerWidth/2,innerHeight*.45)?.closest('.showcase-card,.turn,#composer');const reason=target===focused?(target===input?'chat':'focus'):'scroll';const r=pet.getBoundingClientRect();if(r.right>innerWidth||r.bottom>innerHeight||r.left<0||r.top<0)moveTo(target,reason,true);scrollTimer=setTimeout(()=>moveTo(target,reason),120); };
+
+  const moodObserver = new MutationObserver(() => { sync(); if (usable() && (stage.dataset.mood === 'reply' || stage.dataset.mood === 'thinking')) returnToChat(); });
+  moodObserver.observe(stage, { attributes: true, attributeFilter: ['data-mood', 'data-still'] });
+  const hiddenObserver = new MutationObserver(sync); hiddenObserver.observe(pet, { attributes: true, attributeFilter: ['hidden'] });
+  let emitterPrevious;const bubbleStop = createBubbleField(document.body, () => {const now=performance.now(),r=pet.getBoundingClientRect();const cx=r.left+r.width/2,cy=r.top+r.height*.78;if(emitterPrevious&&now>emitterPrevious.t){const dt=Math.max(.008,(now-emitterPrevious.t)/1000);emitter.vx=clamp((cx-emitterPrevious.x)/dt,-500,500);emitter.vy=clamp((cy-emitterPrevious.y)/dt,-500,500);}emitterPrevious={x:cx,y:cy,t:now};emitter.x=cx;emitter.y=cy;emitter.podOffset=r.width*.33;emitter.suspended=!usable();return emitter;});
+  document.addEventListener('focusin', focusOrHover); document.addEventListener('pointerover', focusOrHover, { passive: true }); document.addEventListener('pointerdown', noteActivity, { passive: true }); document.addEventListener('keydown', noteActivity); document.addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll, { passive: true }); reduced.addEventListener('change', sync); document.addEventListener('visibilitychange', sync); document.addEventListener('toggle', sync, true); addEventListener('pagehide', () => { emitter.active = false; setDocked(true); }); addEventListener('pageshow', sync);
+  sync();
+  const idle = setInterval(() => { if (usable() && document.activeElement !== input && rectVisible(input?.getBoundingClientRect()) && stage.dataset.mood === 'idle' && !idleHinted && performance.now() - lastActivity > 15000) { idleHinted = true; moveTo(input || stage, 'idle'); } }, 2000);
+  return () => { disposed = true; clearInterval(idle); clearTimeout(scrollTimer); clearTimeout(moveTimer); hideBubble(); flightAnimation?.cancel(); moodObserver.disconnect(); hiddenObserver.disconnect(); bubbleStop(); stage.prepend(pet); flight.remove(); bubble.remove(); document.removeEventListener('focusin', focusOrHover); document.removeEventListener('pointerover', focusOrHover); document.removeEventListener('pointerdown', noteActivity); document.removeEventListener('keydown', noteActivity); document.removeEventListener('scroll', onScroll); removeEventListener('resize', onScroll); reduced.removeEventListener('change', sync); document.removeEventListener('visibilitychange', sync); document.removeEventListener('toggle', sync, true); removeEventListener('pageshow', sync); };
 }

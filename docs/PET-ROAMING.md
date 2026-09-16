@@ -1,3 +1,7 @@
+# Superseded prototype
+
+The first roaming pass below is historical. Current behavior and acceptance criteria: [SAM-COMPANION.md](SAM-COMPANION.md). Sam replaces the name Dot; scroll presence and bubble thrust replace this earlier flight design.
+
 # Dot: roaming jetpack companion
 
 Pet-only refinement. Conversation instructions, worker behavior, story policy, neural overlay, cloud and gallery are unchanged.

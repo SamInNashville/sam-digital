@@ -8,7 +8,7 @@ export function startCompanion(host){
  const label=document.querySelector('#companion-label'),toggle=document.querySelector('#companion-toggle'),reduce=matchMedia('(prefers-reduced-motion: reduce)');
  let hidden=false,paused=reduce.matches||document.documentElement.dataset.motionPaused==='true',typingTimer,replyTimer;
  const stopped=()=>hidden||paused||document.hidden;
- const setState=value=>{stage.dataset.mood=value;label.textContent=value==='thinking'?'Dot is thinking locally':value==='listening'?'Dot is listening':value==='reply'?'Dot has a reply':'Dot · your browser AI';};
+ const setState=value=>{stage.dataset.mood=value;label.textContent=value==='thinking'?'Sam is thinking locally':value==='listening'?'Sam is listening':value==='reply'?'Sam has a reply':'Sam · your browser AI';};
  const sync=()=>{stage.dataset.still=String(stopped());pet.style.setProperty('--look-x','0px');pet.style.setProperty('--look-y','0px');};
  new MutationObserver(()=>{clearTimeout(replyTimer);if(host.dataset.state==='researching')setState('thinking');else if(host.dataset.state==='engaged'){setState('reply');replyTimer=setTimeout(()=>setState('idle'),2000);}else setState('idle');}).observe(host,{attributes:true,attributeFilter:['data-state']});
  document.querySelector('#prompt')?.addEventListener('input',()=>{if(host.dataset.state==='researching')return;clearTimeout(typingTimer);setState('listening');typingTimer=setTimeout(()=>setState('idle'),1200);});

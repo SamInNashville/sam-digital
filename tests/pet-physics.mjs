@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {createBubble,stepBubble,resolveBubbleCollisions,bubbleOpacity,BUBBLE_LIMIT} from '../src/pet-bubbles.js';
+const bounds={width:1200,height:1200};
+const b=createBubble({x:500,y:500,vx:120,vy:100,size:16});
+stepBubble(b,1/60,bounds);assert(b.x>500&&b.y>500,'Initial thrust retains travel and downward impulse');assert(b.vx<120,'Drag dissipates horizontal momentum');
+let bottom=b.y;for(let i=0;i<120;i++){stepBubble(b,1/60,bounds);bottom=Math.max(bottom,b.y);}assert(b.vy<0&&b.y<bottom-5,'Buoyancy visibly reverses ejection into rising motion');assert(b.vx<15,'Drag decelerates inherited lateral velocity');
+const wall=createBubble({x:1190,y:500,vx:500,vy:0,size:20});stepBubble(wall,.05,bounds);assert(wall.x<=1190&&wall.vx<0,'Viewport collision reflects velocity');assert(Math.abs(wall.vx)<500,'Wall collision loses energy');
+const a=createBubble({x:100,y:100,vx:15,size:20}),c=createBubble({x:105,y:100,vx:-15,size:20});const oldDistance=c.x-a.x;resolveBubbleCollisions([a,c]);assert(c.x-a.x>oldDistance,'Bubble contact separates overlapping surfaces');assert(a.vx<15&&c.vx>-15,'Soft contact exchanges momentum');
+const same=[createBubble({x:50,y:50,size:20}),createBubble({x:50,y:50,size:20})];resolveBubbleCollisions(same);assert(same[0].x!==same[1].x,'Coincident centers separate deterministically');
+const slow=createBubble({x:500,y:500,vy:100});stepBubble(slow,10,bounds);assert(slow.age<=.05&&slow.y<510,'Long frame gaps are bounded');
+const fade=createBubble();assert.equal(bubbleOpacity(fade),0);fade.age=.5;assert(bubbleOpacity(fade)>.9);fade.age=fade.life;assert.equal(bubbleOpacity(fade),0);assert(BUBBLE_LIMIT<=64);
+console.log('PASS inherited momentum, drag, buoyant reversal, damped viewport bounce, soft particle collisions, coincident separation, bounded timestep, lifetime fade and bounded population');

@@ -2,10 +2,10 @@
 
 ## What changed
 
-- Visible identity before typing: **Meet Dot. AI, not a human.** Reply labels identify Dot as browser AI. Human contact is explicitly the email handoff.
+- Visible identity before typing: **Meet Sam. AI, not a human.** Reply labels identify Sam as browser AI. Human contact is explicitly the email handoff.
 - Privacy explanation separates on-device inference and in-memory conversation from site/model downloads, model caching, and visitor-controlled email/copy/download. No new analytics, remote inference, form service, or data storage.
 - Original WebGPU cloud shader remains unchanged. A deterministic connected neural overlay fires on submission, continues during a held response, fades afterward, and stops its frame loop at idle. It is decorative activity feedback, not claimed model internals. Pixel extent is capped, with 30fps maximum and pause/reduced-motion/hidden-page handling.
-- Dot is an original SVG companion, with pointer-following eyes and listening/thinking/reply poses. Movement stays within a reserved perch so it cannot cover input or buttons. Hide/show is available.
+- Sam is an original SVG companion, with pointer-following eyes and listening/thinking/reply poses. Movement stays within a reserved perch so it cannot cover input or buttons. Hide/show is available.
 - Gallery has real playable Breakout and an interactive design study (three palettes, two layouts). Both are labelled demos, not client work. No external assets or dependencies added.
 - One motion control coordinates the cloud, network and companion. Manual global pause also pauses Breakout. OS reduced motion keeps decoration still but allows a game the visitor deliberately starts.
 
@@ -19,3 +19,5 @@
 - Existing story UI and real GPU cloud tests preserved. Multi-canvas selectors now explicitly target the original cloud instead of assuming one canvas per page.
 
 The assistant's conversational prompt and story policy are unchanged by this release. Mobile screenshots are browser-viewport tests, not a physical iPhone performance claim.
+
+Current companion behavior: see `SAM-COMPANION.md`. The original reserved-perch companion now accompanies the viewport with purposeful attention and physically simulated bubble thrust.
