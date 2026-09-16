@@ -1,23 +1,24 @@
-// Short, bounded flight choreography. Destinations still come from page content.
+// Continuous, time-sampled parabolic flights with a gentle elastic settle.
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function planPetFlight(from,to,{width,height,trip=0}={}){
- const dx=to.x-from.x,dy=to.y-from.y,distance=Math.hypot(dx,dy),ux=distance?dx/distance:1,uy=distance?dy/distance:0;
- const bound=p=>({x:clamp(p.x,10,Math.max(10,width-92)),y:clamp(p.y,12,Math.max(12,height-110))});
- const start=bound(from),end=bound(to);if(distance<12)return {kind:'settle',points:[{...start,offset:0},{...end,offset:1}],duration:450};
- const bend=Math.min(70,distance*.23)*(trip%2?1:-1),nx=-uy,ny=ux;
- const center={x:(start.x+end.x)/2+nx*bend*.5,y:(start.y+end.y)/2+ny*bend*.5};
- const room=center.x>85&&center.x<width-175&&center.y>90&&center.y<height-190;
- const loop=distance>260&&trip%3===0&&room;const points=[{...start,offset:0}];
- // Cubic-bezier timing stays inside each segment; curved geometry is explicit.
- for(let i=1;i<=12;i++){
-  const t=i/12,p={x:start.x+(end.x-start.x)*t+nx*Math.sin(Math.PI*t)*bend,y:start.y+(end.y-start.y)*t+ny*Math.sin(Math.PI*t)*bend};
-  points.push({...bound(p),offset:t*.78});
-  if(loop&&i===6){const radius=Math.min(30,distance*.07);for(let j=1;j<=12;j++){const angle=j/12*Math.PI*2;points.push({...bound({x:p.x+ux*Math.sin(angle)*radius+nx*(1-Math.cos(angle))*radius,y:p.y+uy*Math.sin(angle)*radius+ny*(1-Math.cos(angle))*radius}),offset:.39+j/12*.18});}}
+ const bounds={left:10,right:Math.max(10,width-92),top:12,bottom:Math.max(12,height-110)};
+ const bound=p=>({x:clamp(p.x,bounds.left,bounds.right),y:clamp(p.y,bounds.top,bounds.bottom)});
+ const start=bound(from),end=bound(to),dx=end.x-start.x,dy=end.y-start.y,distance=Math.hypot(dx,dy);
+ if(distance<12)return {kind:'settle',points:[{...start,offset:0},{...end,offset:1}],duration:600};
+ const nx=-dy/distance,ny=dx/distance;
+ let bend=Math.min(76,distance*.2)*(trip%2?1:-1),spring=.9,points;
+ for(let attempt=0;attempt<10;attempt++){
+  if(attempt===9){bend=0;spring=0;}
+  points=Array.from({length:97},(_,i)=>{
+   const t=i/96,u=(1-Math.cos(Math.PI*t))/2;
+   const progress=1+(spring+1)*(u-1)**3+spring*(u-1)**2;
+   const arc=4*bend*progress*(1-progress);
+   return {x:start.x+dx*progress+nx*arc,y:start.y+dy*progress+ny*arc,offset:t};
+  });
+  if(points.every(p=>p.x>=bounds.left-1e-6&&p.x<=bounds.right+1e-6&&p.y>=bounds.top-1e-6&&p.y<=bounds.bottom+1e-6))break;
+  // Reduce the arc and rebound rather than clipping individual samples into corners.
+  bend*=.65;spring*=.5;
  }
- if(loop){for(let i=0;i<points.length;i++){if(i>18)points[i].offset+=.18;}for(const p of points)p.offset*=.78/.96;}
- const overshoot=Math.min(24,distance*.09);
- points.push({...bound({x:end.x+ux*overshoot,y:end.y+uy*overshoot}),offset:.87});
- points.push({...bound({x:end.x-ux*4,y:end.y-uy*4}),offset:.95});
- points.push({...end,offset:1});
- return {kind:loop?'loop':'curve',points,duration:Math.min(3000,Math.max(1050,distance*2.5)+(loop?650:0))};
+ points[0]={...start,offset:0};points[96]={...end,offset:1};
+ return {kind:'parabola',points,duration:Math.min(4200,2300+distance*1.5)};
 }

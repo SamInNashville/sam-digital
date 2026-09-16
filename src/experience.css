@@ -30,9 +30,9 @@ footer .footer-note{max-width:310px;line-height:1.7}
 
 /* Sam's jetpack: movement belongs to a separate pointer-transparent layer. */
 .dot-flight{position:fixed;left:0;top:0;width:82px;height:98px;z-index:15;pointer-events:none;transition:none;will-change:transform}
-.dot-flight #companion{left:4px;top:0;pointer-events:none}
-.dot-flight[data-flying=true] #companion{animation:dot-cruise .7s ease-in-out infinite alternate}
-.dot-flight[data-mood=listening] #companion{animation:dot-attentive 1.3s ease-in-out infinite}
+.dot-flight #companion{left:4px;top:0;pointer-events:none;rotate:0deg;transition:rotate .8s ease}
+.dot-flight[data-flying=true] #companion{animation:none;rotate:var(--lean,0deg)}
+.dot-flight[data-mood=listening]:not([data-flying=true]) #companion{animation:dot-attentive 1.3s ease-in-out infinite}
 .dot-flight[data-mood=thinking] .dot-antenna{animation:dot-antenna .7s ease-in-out infinite alternate}
 .dot-flight[data-mood=reply] #companion{animation:dot-hello .6s ease-out 2}
 .dot-point{opacity:0}.dot-flight[data-point=true] .dot-point{opacity:1}.dot-point{transform-origin:77px 64px;transform:rotate(var(--point-angle,0deg))}
