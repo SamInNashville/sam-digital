@@ -28,3 +28,13 @@ Verified locally: actual rendered bubble pixels change over time; continuous scr
 ## Content-led hover refinement
 
 The opening now reads “Sam is here to help you.” Sam introduces himself with “I'm Sam! I'll guide you.” The old explanatory introduction is removed; privacy details and a tucked-away Hide Sam control remain. Perches derive from the active conversation/demo or the visible content section, rather than a right-edge fallback. Eye tracking remains unchanged. Smaller transparent-outline bubbles emit continuously while hovering, increase during travel, and stop under pause/reduced-motion/hide. Rendering is capped at 30 updates per second and a maximum 1800px canvas dimension. `tests/sam-hover.mjs` verifies the exact copy, sustained stationary emission, content-adjacent perch, gaze and pause.
+
+## Playful personality refinement
+
+- Increased downward ejection to 120px/s while hovering and 190px/s in flight, before inherited motion/drag/buoyancy. Bubble size and transparency are unchanged.
+- Authored combinatorial phrase banks: 100 variations each for services, Breakout, design, chat encouragement and general asides; small additional banks for waiting, reply, idle and tickle moments. Context selection does not inspect visitor text. Sarcastic site/demo lines never come from the chat encouragement bank. Requested example lines are each context's first line.
+- Roughly 14-second minimum spacing for automatic asides; brief supportive input-focus exception with its own cooldown. Actual typing clears speech immediately. Nothing is inserted into the enquiry transcript. No extra model calls.
+- Travel uses bounded curved keyframes, an occasional loop when space permits, and overshoot/settling. Ticklish proximity adds a short bounded dodge, mouse-only, cooled down, disabled while editing/paused. It never intercepts input.
+- `tests/pet-dialogue.mjs`, `pet-flight.mjs`, `pet-context.mjs`, `pet-personality.mjs` and `pet-tickle.mjs` check banks/physics, geometry, exact contextual examples, rendered spontaneous chatter/flight, and real pointer proximity.
+
+An optional model-fed aside could be added later as a non-blocking part of a completed conversational response, with length/safety validation and authored fallback. It is deliberately not connected in this release.

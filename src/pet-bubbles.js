@@ -1,6 +1,7 @@
 // Bounded, deterministic bubble physics for Sam's jetpack. No DOM or user data.
 export const BUBBLE_LIMIT = 48;
 export const BUBBLE_LIFETIME = 2.8;
+export const THRUST = Object.freeze({ hover: 120, flight: 190 });
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
 export function createBubble({ x = 0, y = 0, vx = 0, vy = 0, size = 4, life = BUBBLE_LIFETIME } = {}) {
@@ -43,7 +44,7 @@ export function createBubbleField(parent, getEmitter) {
     if(e?.suspended||document.hidden){bubbles.length=0;ctx?.clearRect(0,0,innerWidth,innerHeight);canvas.dataset.count='0';}
     if (e?.suspended||document.hidden||(!e?.active && bubbles.length === 0)) { timer = setTimeout(() => { raf = requestAnimationFrame(frame); }, 200); return; }
     canvas.dataset.frames = String(++frames); canvas.dataset.count = String(bubbles.length);
-    if (e?.active && bubbles.length < BUBBLE_LIMIT) { emitCarry += dt * (e.moving ? 16 : 8); const n = Math.floor(emitCarry); emitCarry -= n; for (let i = 0; i < n && bubbles.length < BUBBLE_LIMIT; i += 1) { const sample=serial++;const pod = sample % 2; bubbles.push(createBubble({ x: e.x + (pod ? 1 : -1)*(e.podOffset||20), y: e.y, vx: e.vx + (pod ? 16 : -16), vy: e.vy + (e.moving ? 85 : 48), size: 4 + (sample % 4) * 1.3, life: 1.8 + (sample % 4) * 0.28 })); } }
+    if (e?.active && bubbles.length < BUBBLE_LIMIT) { emitCarry += dt * (e.moving ? 16 : 8); const n = Math.floor(emitCarry); emitCarry -= n; for (let i = 0; i < n && bubbles.length < BUBBLE_LIMIT; i += 1) { const sample=serial++;const pod = sample % 2; bubbles.push(createBubble({ x: e.x + (pod ? 1 : -1)*(e.podOffset||20), y: e.y, vx: e.vx + (pod ? 16 : -16), vy: e.vy + (e.moving ? THRUST.flight : THRUST.hover), size: 4 + (sample % 4) * 1.3, life: 1.8 + (sample % 4) * 0.28 })); } }
     for (const b of bubbles) stepBubble(b, dt, { width: innerWidth, height: innerHeight }); resolveBubbleCollisions(bubbles);
     if (ctx) { ctx.clearRect(0, 0, innerWidth, innerHeight); for (const b of bubbles) { if (b.age >= b.life) continue; const alpha = bubbleOpacity(b); ctx.globalAlpha = 0; ctx.fillStyle = '#8cf5e0'; ctx.beginPath(); ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = alpha * 0.42; ctx.strokeStyle = '#c4f9f0'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.arc(b.x, b.y, b.size / 2, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = alpha * 0.45; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x - b.size * .16, b.y - b.size * .18, Math.max(1, b.size * .1), 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
     for (let i = bubbles.length - 1; i >= 0; i -= 1) if (bubbles[i].age >= bubbles[i].life) bubbles.splice(i, 1); raf = requestAnimationFrame(frame);
