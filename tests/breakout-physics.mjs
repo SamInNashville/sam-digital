@@ -1,21 +1,17 @@
 import {chromium,expect} from '@playwright/test';
-const base=process.env.BASE_URL||'http://127.0.0.1:4183/sam-digital/';
-const browser=await chromium.launch({channel:'chrome',headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000}});
-await page.addInitScript(()=>{
- Object.defineProperty(navigator,'gpu',{value:undefined,configurable:true});
- let id=0,time=0;const callbacks=new Map();window.requestAnimationFrame=fn=>{callbacks.set(++id,fn);return id;};window.cancelAnimationFrame=id=>callbacks.delete(id);
- const arc=CanvasRenderingContext2D.prototype.arc;CanvasRenderingContext2D.prototype.arc=function(x,y,...rest){if(this.canvas.classList.contains('breakout-canvas'))window.drawnBall={x,y};return arc.call(this,x,y,...rest);};
- window.playFrames=(limit,mode)=>{const c=document.querySelector('.breakout-canvas'),r=c.getBoundingClientRect();let bounces=0,oldY=0,oldDirection=0,frames=0;
-  for(;frames<limit;frames++){const ball=window.drawnBall;if(ball){const direction=Math.sign(ball.y-oldY);if(oldDirection>0&&direction<0&&ball.y>260)bounces++;if(direction)oldDirection=direction;oldY=ball.y;const aim=mode==='win'?ball.x+Math.sin(frames*.041)*29:ball.x>280?10:550;c.dispatchEvent(new PointerEvent('pointermove',{clientX:r.left+aim/c.width*r.width,clientY:r.top+r.height-10,isPrimary:true}));}
-   time+=1000/60;const batch=[...callbacks.values()];callbacks.clear();for(const fn of batch)fn(time);
-   if(/cleared|Game over/.test(document.querySelector('.breakout-status').textContent))break;
-  }
-  return {frames,bounces,score:document.querySelector('[data-score]').textContent,lives:document.querySelector('[data-lives]').textContent,status:document.querySelector('.breakout-status').textContent,queuedFrames:callbacks.size};
- };
-});
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+const source=(await readFile(new URL('../src/demos/arcade.js',import.meta.url),'utf8')).replace("import './arcade.css';",'');
+const browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext();const page=await context.newPage();
 try{
- await page.goto(base);await page.locator('.breakout-start').scrollIntoViewIfNeeded();await page.waitForTimeout(150);await page.locator('.breakout-start').click();
- const win=await page.evaluate(()=>window.playFrames(24000,'win'));console.log('Rendered-ball-following win proof',win);expect(win.status).toContain('cleared');expect(win.score).toBe('280');expect(win.bounces).toBeGreaterThan(0);
- await page.locator('.breakout-restart').click();await page.locator('.breakout-start').click();const lose=await page.evaluate(()=>window.playFrames(10000,'lose'));console.log('Deliberately missed paddle loss proof',lose);expect(lose.status).toContain('Game over');expect(lose.lives).toBe('0');
- await page.locator('.breakout-restart').click();expect(await page.locator('[data-score]').innerText()).toBe('0');expect(await page.locator('[data-lives]').innerText()).toBe('3');console.log('PASS real game physics: bricks, paddle bounces, full win, full loss, restart; virtual frame clock, no state injection');
-}finally{await browser.close();}
+ await page.setContent('<div id="host"></div>');
+ const results=await page.evaluate(async source=>{
+  // Isolated physics run: no-op drawing and controlled frame clock, real mount/input/update logic.
+  const context=new Proxy({createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]||(()=>{})});HTMLCanvasElement.prototype.getContext=()=>context;
+  let clock=performance.now(),seq=0,seed=1234567;const callbacks=new Map();window.requestAnimationFrame=fn=>{callbacks.set(++seq,fn);return seq;};window.cancelAnimationFrame=id=>callbacks.delete(id);Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  const url=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));const module=await import(url);URL.revokeObjectURL(url);const dispose=module.mount(document.querySelector('#host'));const root=document.querySelector('.arcade-demo'),canvas=root.querySelector('canvas');
+  function run(mode,limit){root.querySelector('[data-start]').click();let frames=0;while(root.dataset.gameState==='running'&&frames<limit){const ball=Number(root.dataset.ballX),r=canvas.getBoundingClientRect();const target=mode==='win'?ball+Math.sin(frames*.039)*30:ball<320?590:50;canvas.dispatchEvent(new PointerEvent('pointermove',{clientX:r.left+target/640*r.width,clientY:r.top+350/390*r.height,isPrimary:true}));clock+=1000/120;const batch=[...callbacks.values()];callbacks.clear();for(const fn of batch)fn(clock);frames++;}return {mode,frames,state:root.dataset.gameState,score:Number(root.dataset.score),lives:Number(root.dataset.lives)};}
+  const win=run('win',100000);root.querySelector('[data-restart]').click();const lose=run('lose',20000);dispose();return {win,lose,pendingCallbacks:callbacks.size};
+ },source);
+ expect(results.win.state).toBe('won');expect(results.win.score).toBeGreaterThan(0);expect(results.lose.state).toBe('game-over');expect(results.lose.lives).toBe(0);expect(results.pendingCallbacks).toBe(0);
+ await mkdir('proof/demo-gallery',{recursive:true});await writeFile('proof/demo-gallery/arcade-physics.json',JSON.stringify(results,null,2));console.log('PASS actual arcade collision/clear/loss/reset paths with deterministic frame clock; drawing stubbed (separate visual test)',JSON.stringify(results));
+}finally{await context.close();await browser.close();}

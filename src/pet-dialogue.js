@@ -218,7 +218,7 @@ export const PHRASES=Object.freeze(Object.fromEntries(Object.entries({
     "A sentence is enough to begin.",
     "What should feel easier?",
     "Tell me the part you care about.",
-    "We can sort out the shape as we go.",
+    "We can sort out the details as we go.",
     "Start with the problem, if that helps.",
     "I'm here for the details.",
     "You can describe a frustrating task instead of proposing a solution.",
@@ -359,7 +359,7 @@ export const PHRASES=Object.freeze(Object.fromEntries(Object.entries({
     "Thinking here in the browser. Hovering here too.",
     "The reply needs a moment. The bubbles can keep going.",
     "I'm working on a response. No need to race the jetpack.",
-    "A moment for the answer to take shape."
+    "A moment to work through the details."
   ],
   "reply": [
     "We can keep exploring from here.",

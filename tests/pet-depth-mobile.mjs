@@ -8,7 +8,7 @@ const page=await context.newPage(),results=[];
 try {
  await page.goto(process.env.BASE_URL||'http://127.0.0.1:4183/sam-digital/');
  await expect(page.locator('.dot-bubble')).toHaveText("I'm Sam! I'll guide you.");
- for(const selector of ['.breakout-start','[data-palette=lavender]','.breakout-start']) {
+ for(const selector of ['[data-demo=arcade]','[data-demo=design]','[data-demo=arcade]']) {
   await page.locator(selector).focus();
   await expect(page.locator('.dot-flight')).toHaveAttribute('data-flying','true',{timeout:10000});
   const sampling=page.evaluate(async()=>{const f=document.querySelector('.dot-flight'),pet=document.querySelector('#companion'),rows=[];const deadline=performance.now()+7000;do{const r=pet.getBoundingClientRect();rows.push({scale:f.getBoundingClientRect().width/f.offsetWidth,left:r.left,top:r.top,right:r.right,bottom:r.bottom});await new Promise(requestAnimationFrame);}while(f.dataset.flying==='true'&&performance.now()<deadline);return rows;});

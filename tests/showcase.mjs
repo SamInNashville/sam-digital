@@ -1,89 +1,51 @@
-import { readFile } from 'node:fs/promises';
-import { chromium, expect } from '@playwright/test';
+import {chromium,expect} from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-
-const base = process.env.BASE_URL || 'http://127.0.0.1:4183/sam-digital/';
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
-const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
-await context.addInitScript(() => {
-  // Keep this fixture explicit: showcase must not infer or depend on the app's AI worker.
-  window.Worker = class ShowcaseFixtureWorker {
-    postMessage() {}
-    terminate() {}
-  };
-});
-const page = await context.newPage();
-await page.route('**/src/showcase.js', async (route) => {
-  await route.fulfill({ status: 200, contentType: 'application/javascript', body: await readFile(new URL('../src/showcase.js', import.meta.url), 'utf8') });
-});
-await page.route('**/src/showcase.css', async (route) => {
-  await route.fulfill({ status: 200, contentType: 'text/css', body: await readFile(new URL('../src/showcase.css', import.meta.url), 'utf8') });
-});
-const checks = [];
-const pass = (message) => { checks.push(message); console.log('PASS', message); };
-const moduleSource = (await readFile(new URL('../src/showcase.js', import.meta.url), 'utf8')).replace("import './showcase.css';", '');
-const moduleUrl = `data:text/javascript;base64,${Buffer.from(moduleSource).toString('base64')}`;
-
-try {
-  await page.goto(base);
-  const fixture = page.locator('#showcase');
-  await expect(fixture.getByText('Interactive demos · not client work', { exact: true })).toBeVisible();
-  await expect(fixture.locator('.showcase-card')).toHaveCount(2);
-  await expect(fixture.locator('canvas.breakout-canvas')).toHaveAttribute('aria-label', /Breakout game/);
-  await expect(fixture.locator('.breakout-status')).toHaveText('Ready when you are.');
-  await expect(fixture.locator('.breakout-start')).toBeEnabled();
-  await expect(fixture.locator('.breakout-pause')).toBeDisabled();
-  pass('Gallery mounts two labeled, embedded demos without auto-starting');
-
-  await fixture.locator('.breakout-start').click();
-  await expect(fixture.locator('.breakout-status')).toHaveText('In play.');
-  await expect(fixture.locator('.breakout-pause')).toBeEnabled();
-  await fixture.locator('.breakout-canvas').focus();
-  await page.keyboard.press('ArrowLeft');
-  await page.keyboard.press('ArrowRight');
-  await fixture.locator('.breakout-pause').click();
-  await expect(fixture.locator('.breakout-status')).toHaveText('Paused.');
-  await fixture.locator('.breakout-restart').click();
-  await expect(fixture.locator('.breakout-status')).toHaveText('Ready when you are.');
-  await expect(fixture.locator('[data-score]')).toHaveText('0');
-  await expect(fixture.locator('[data-lives]')).toHaveText('3');
-  pass('Breakout controls, keyboard steering, restart, score and lives are functional');
-
-  await fixture.locator('.breakout-start').click();
-  await page.evaluate(() => window.dispatchEvent(new CustomEvent('sam-motion', { detail: { paused: true } })));
-  await expect(fixture.locator('.breakout-status')).toHaveText('Paused by motion controls.');
-  await page.evaluate(() => window.dispatchEvent(new CustomEvent('sam-motion', { detail: { paused: false } })));
-  await expect(fixture.locator('.breakout-status')).toHaveText('In play.');
-  await fixture.locator('.breakout-pause').click();
-  pass('sam-motion pause event stops and resumes an explicitly started game');
-
-  await fixture.locator('button[data-palette="lavender"]').click();
-  await expect(fixture.locator('.study-preview')).toHaveAttribute('data-palette', 'lavender');
-  await expect(fixture.locator('button[data-palette="lavender"]')).toHaveAttribute('aria-pressed', 'true');
-  await fixture.locator('[data-layout-choice="compact"]').click();
-  await expect(fixture.locator('.study-preview')).toHaveAttribute('data-layout', 'compact');
-  await expect(fixture.locator('[data-layout-choice="compact"]')).toHaveAttribute('aria-pressed', 'true');
-  pass('Design study palette and layout controls update accessible state');
-
-  for (const width of [320, 390, 768, 1440]) {
-    await page.setViewportSize({ width, height: 844 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+import {mkdir,writeFile} from 'node:fs/promises';
+const mobile=process.env.MOBILE==='1',width=mobile?390:1440,height=mobile?844:1000;
+const dir=`proof/demo-gallery/${mobile?'mobile':'desktop'}`;await mkdir(dir,{recursive:true});
+const browser=await chromium.launch({channel:'chrome',headless:true});const context=await browser.newContext({viewport:{width,height}});
+await context.addInitScript(()=>{window.Worker=class{postMessage(d){if(d.type==='init')queueMicrotask(()=>this.onmessage({data:{type:'ready',model:'UI test fixture'}}));}terminate(){}}});
+const page=await context.newPage(),errors=[],requests=[],results=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
+const chunks=()=>[...new Set(requests.map(u=>u.match(/\/(arcade|design|particles|pathfinder)-[^/]+\.js(?:\?|$)/)?.[1]).filter(Boolean))].sort();
+async function pixels(selector){return page.locator(selector).evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let hash=2166136261;for(let i=0;i<d.length;i+=13)hash=Math.imul(hash^d[i],16777619);return hash>>>0;});}
+try{
+ await page.goto(process.env.BASE_URL||'http://127.0.0.1:4183/sam-digital/');await expect(page.locator('#intro')).toHaveCount(0);
+ await expect(page.locator('.lede')).toHaveText("You have an idea. Let's build it. Tell Sam, your AI guide, what you have in mind. He'll help define your project. When ready, send it to the humans.");
+ await expect(page.locator('#showcase [data-demo]')).toHaveCount(4);await expect(page.locator('#showcase canvas')).toHaveCount(0);expect(chunks()).toEqual([]);
+ await page.locator('#showcase').scrollIntoViewIfNeeded();await page.screenshot({path:`${dir}/swatches.png`,fullPage:true});
+ for(const id of ['arcade','design','particles','pathfinder']){
+  const swatch=page.locator(`#showcase [data-demo=${id}]`);await swatch.click();const modal=page.locator('#demo-dialog');await expect(modal).toHaveAttribute('data-state','ready',{timeout:12000});await expect(modal).toHaveAttribute('data-demo',id);
+  expect(chunks()).toEqual([...results.map(r=>r.id),id].sort());await expect(page.locator('.demo-close')).toBeFocused();
+  expect(await page.evaluate(()=>document.querySelector('#demo-dialog').scrollWidth<=document.querySelector('#demo-dialog').clientWidth+1&&document.querySelector('.demo-stage').scrollWidth<=document.querySelector('.demo-stage').clientWidth+1)).toBe(true);
+  const result={id,lazy:true};
+  if(id==='arcade'){
+   await page.locator('[data-start]').click();await expect(page.locator('.arcade-demo')).toHaveAttribute('data-game-state','running');
+   await expect.poll(()=>page.locator('.arcade-demo').getAttribute('data-score'),{timeout:16000}).not.toBe('0');result.score=Number(await page.locator('.arcade-demo').getAttribute('data-score'));
+   await page.locator('[data-pause]').click();const before=await pixels('[data-game-canvas]');await page.waitForTimeout(300);expect(await pixels('[data-game-canvas]')).toBe(before);
+   await expect(page.locator('[data-pause]')).toHaveText('Resume');await page.locator('[data-pause]').click();await expect.poll(()=>pixels('[data-game-canvas]')).not.toBe(before);
+   await page.locator('[data-restart]').click();await expect(page.locator('.arcade-demo')).toHaveAttribute('data-score','0');await expect(page.locator('b[data-lives]')).toHaveText('3');
+  }else if(id==='design'){
+   if(!await page.locator('.design-demo__panel').evaluate(e=>e.open))await page.locator('.design-demo__panel>summary').click();
+   const preview=page.locator('.design-demo__preview'),before=await preview.evaluate(e=>getComputedStyle(e).backgroundColor);
+   await page.locator('button[data-palette=lavender]').click();await expect(page.locator('.design-demo')).toHaveAttribute('data-palette','lavender');await expect.poll(()=>preview.evaluate(e=>getComputedStyle(e).backgroundColor)).not.toBe(before);
+   await page.locator('button[data-type=serif]').click();await page.locator('button[data-layout=split]').click();await expect(page.locator('.design-demo')).toHaveAttribute('data-type','serif');await expect(page.locator('.design-demo')).toHaveAttribute('data-layout','split');
+   result.contrast=await page.locator('[data-contrast]').textContent();expect(parseFloat(result.contrast)).toBeGreaterThan(7);
+   await page.locator('[data-preview-link]').click();await expect(page.locator('[data-preview-link]')).toContainText('Direction selected');
+  }else if(id==='particles'){
+   const before=await pixels('[data-particle-canvas]');await page.locator('[data-preset=torus]').click();await expect(page.locator('.particles-demo')).toHaveAttribute('data-shape','torus');await expect.poll(()=>pixels('[data-particle-canvas]')).not.toBe(before);
+   await page.locator('[data-density]').focus();await page.locator('[data-density]').press('End');await expect(page.locator('.particles-demo')).toHaveAttribute('data-count','1000');result.nodes=1000;
+   await page.locator('[data-particle-pause]').click();const frozen=await pixels('[data-particle-canvas]');await page.waitForTimeout(350);expect(await pixels('[data-particle-canvas]')).toBe(frozen);
+   await page.locator('[data-particle-canvas]').focus();await page.locator('[data-particle-canvas]').press('ArrowRight');expect(await pixels('[data-particle-canvas]')).not.toBe(frozen);
+  }else{
+   await page.locator('[data-path-run]').click();await expect(page.locator('[data-path-status]')).toContainText('Route found',{timeout:16000});const a=Number(await page.locator('[data-explored]').textContent()),distance=Number(await page.locator('i[data-distance]').textContent());expect(distance).toBe(23);
+   await page.locator('[data-path-algorithm]').selectOption('dijkstra');await page.locator('[data-path-run]').click();await expect(page.locator('[data-path-status]')).toContainText('Route found',{timeout:16000});const d=Number(await page.locator('[data-explored]').textContent());expect(d).toBeGreaterThan(a);await expect(page.locator('i[data-distance]')).toHaveText(String(distance));result.astarExplored=a;result.dijkstraExplored=d;result.distance=distance;
+   await page.locator('[data-path-reset]').click();await page.locator('[data-path-canvas]').focus();await page.locator('[data-path-canvas]').press('ArrowUp');await page.locator('[data-path-canvas]').press('Space');await expect(page.locator('.pathfinder-demo')).toHaveAttribute('data-walls','1');
+   await page.locator('[data-path-maze]').click();await page.locator('[data-path-algorithm]').selectOption('astar');await page.locator('[data-path-run]').click();await expect(page.locator('[data-path-status]')).toContainText('Route found',{timeout:16000});
   }
-  pass('Gallery has no horizontal overflow at compact and desktop widths');
-
-  await page.setViewportSize({ width: 390, height: 844 });
-  const axe = await new AxeBuilder({ page }).include('#showcase').analyze();
-  expect(axe.violations).toEqual([]);
-  pass('Showcase passes automated accessibility checks');
-  await page.screenshot({ path: 'proof/showcase-mobile.png', fullPage: true });
-
-  await page.emulateMedia({reducedMotion:'reduce'});
-  await fixture.locator('.breakout-start').click();
-  await expect(fixture.locator('.breakout-status')).toHaveText('In play.');
-  await fixture.locator('.breakout-pause').click();
-  pass('Reduced motion stops decoration but still permits a deliberately started game');
-  console.log(JSON.stringify({ base, checks }, null, 2));
-} finally {
-  await context.close();
-  await browser.close();
-}
+  if(id==='design'&&mobile)await page.locator('.design-demo__panel>summary').click();await page.locator('.demo-stage').evaluate(e=>e.scrollTop=0);await page.screenshot({path:`${dir}/${id}.png`});
+  const axe=await new AxeBuilder({page}).include('#demo-dialog').withTags(['wcag2a','wcag2aa','wcag21aa']).analyze();expect(axe.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}))).toEqual([]);
+  await page.evaluate(()=>window.lastDemo=document.querySelector('.demo-stage').firstElementChild);await page.keyboard.press('Escape');await expect(modal).not.toBeVisible();await expect(swatch).toBeFocused();await expect(page.locator('.demo-stage canvas')).toHaveCount(0);
+  const frames=await page.evaluate(()=>window.lastDemo.dataset.frames);await page.waitForTimeout(250);expect(await page.evaluate(()=>window.lastDemo.dataset.frames)).toBe(frames);expect(await page.evaluate(()=>document.documentElement.style.overflow)).not.toBe('hidden');result.cleanedUp=true;results.push(result);
+ }
+ expect(errors).toEqual([]);expect(results.length).toBe(4);await writeFile(`${dir}/results.json`,JSON.stringify({mobile,results,errors},null,2));console.log('PASS four lazy demos, actual interactions/score/search/pixels, modal accessibility, focus restoration, cleanup, exact hero copy',JSON.stringify({mobile,results}));
+}finally{await context.close();await browser.close();}
